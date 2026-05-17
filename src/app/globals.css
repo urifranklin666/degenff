@@ -958,6 +958,76 @@ hr {
   color: var(--red-bright);
 }
 
+/* ─── gallery tile (image/video thumbnail variant) ───────────────────── */
+
+.gallery-tile {
+  /* the whole card is a link — keep our crosshair cursor & no underline */
+  text-decoration: none;
+  color: inherit;
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding-top: 0; /* thumb runs flush to the top */
+}
+.gallery-tile .tile-thumb {
+  position: relative;
+  margin: -1.6rem -1.6rem 0.4rem;   /* bleed to tile edges */
+  aspect-ratio: 4 / 3;
+  background: #000;
+  overflow: hidden;
+  border-bottom: 2px solid #000;
+}
+.gallery-tile .tile-thumb img,
+.gallery-tile .tile-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: contrast(1.05) saturate(0.96);
+  transition: transform var(--t-mid) var(--ease), filter var(--t-fast) var(--ease);
+}
+.gallery-tile:hover .tile-thumb img,
+.gallery-tile:hover .tile-thumb video {
+  transform: scale(1.02);
+  filter: contrast(1.1) saturate(1.1);
+}
+.gallery-tile .tile-thumb-empty {
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+  color: var(--red-bright);
+  font-family: var(--menace); font-style: italic; font-weight: 900;
+  font-size: 4rem;
+  text-shadow: 0 0 24px var(--red-glow);
+}
+
+/* NSFW veil: blurs the thumb, lifts on hover */
+.gallery-tile.is-nsfw .tile-thumb img,
+.gallery-tile.is-nsfw .tile-thumb video {
+  filter: blur(28px) saturate(0.6);
+  transform: scale(1.1);
+}
+.gallery-tile.is-nsfw:hover .tile-thumb img,
+.gallery-tile.is-nsfw:hover .tile-thumb video {
+  filter: blur(0) saturate(1);
+  transform: scale(1);
+}
+.gallery-tile .nsfw-veil {
+  position: absolute; inset: auto 0 0 0;
+  text-align: center;
+  background: #000;
+  color: var(--red-bright);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--red);
+}
+.gallery-tile:hover .nsfw-veil {
+  opacity: 0.2;
+}
+
 /* ─── submit form ────────────────────────────────────────────────────── */
 
 .submit-form { display: grid; gap: 1.25rem; }
