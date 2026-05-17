@@ -958,6 +958,47 @@ hr {
   color: var(--red-bright);
 }
 
+/* ─── submit form ────────────────────────────────────────────────────── */
+
+.submit-form { display: grid; gap: 1.25rem; }
+.submit-form .field { display: grid; gap: 0.4rem; }
+.submit-form .field.row { grid-auto-flow: column; justify-content: start; align-items: center; }
+.submit-form label {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-mid);
+}
+.submit-form label em { font-style: normal; color: var(--text-dim); text-transform: none; letter-spacing: 0.06em; }
+.submit-form .checkbox { display: inline-flex; align-items: center; gap: 0.5rem; cursor: crosshair; color: var(--text); }
+.submit-form .checkbox input { width: 16px; height: 16px; accent-color: var(--red); }
+.submit-form small { color: var(--text-dim); font-size: 0.78rem; }
+.submit-form input[type="file"] {
+  background: var(--surface-2);
+  border: 1px dashed var(--red-deeper);
+  padding: 0.55rem 0.7rem;
+}
+.submit-form .form-error {
+  font-family: var(--mono); font-size: 0.85rem;
+  background: #1a0000; color: var(--red-bright);
+  border: 1px solid var(--red); padding: 0.7rem 0.85rem;
+}
+.submit-form .form-error strong { color: var(--text-bright); margin-right: 0.4rem; text-transform: uppercase; letter-spacing: 0.14em; }
+
+/* submission detail page */
+.submission-files {
+  display: grid; gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+.submission-files img,
+.submission-files video {
+  max-width: 100%; height: auto; display: block;
+  border: 1px solid var(--border-mid);
+  background: var(--surface);
+}
+.submission-files audio { width: 100%; }
+
 /* ─── reveal on view (red flash) ─────────────────────────────────────── */
 
 .reveal-on-view { opacity: 0; transform: translateY(18px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }

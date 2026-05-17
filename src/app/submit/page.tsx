@@ -1,25 +1,35 @@
-export const metadata = { title: "Submit" };
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import SubmitForm from "./SubmitForm";
 
-export default function SubmitPage() {
+export const metadata = { title: "Submit" };
+export const dynamic = "force-dynamic";
+
+export default async function SubmitPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/api/auth/signin?callbackUrl=%2Fsubmit");
+  }
+
   return (
     <section className="section">
       <div className="container" style={{ maxWidth: "62ch" }}>
-        <p className="eyebrow">Drop Zone</p>
+        <span className="eyebrow">Drop Zone</span>
         <h1 className="section-title">Submit A Work.</h1>
-        <p className="lede" style={{ marginBottom: "2rem" }}>
-          The form lights up once Discord login is wired. Submissions are tied to your Discord identity
-          so the mods know who to talk to. Anonymous-mode is on the roadmap.
+        <p className="lede" style={{ marginBottom: "1.5rem" }}>
+          You&apos;re signed in as <b>@{session.user.handle}</b>. A human (and a Discord bot
+          in a trench coat) sees it before it goes public. The bar is <em>did you make it</em>,
+          not <em>is it good</em>.
         </p>
 
-        <div className="tile" style={{ minHeight: 0 }}>
-          <span className="tile-glyph">◈</span>
-          <h3 className="tile-title">Coming online momentarily.</h3>
-          <p className="tile-body">
-            Once Discord OAuth and the upload pipeline are wired, this page renders:
-            medium picker (image/audio/video/text/code/link), file drop or paste box,
-            title, body, tags, NSFW toggle, and a submit button that drops your work into the mod queue.
-          </p>
-        </div>
+        <SubmitForm />
+
+        <p className="lede" style={{ marginTop: "2rem", fontSize: "0.85rem", color: "var(--text-mid)" }}>
+          By submitting, you affirm: (a) you made it or have rights to share it,
+          (b) it&apos;s not bigotry / doxxing / CSAM / illegal in the jurisdiction it&apos;s hosted in,
+          (c) you accept that a moderator decides whether the rest of the room sees it,
+          (d) you don&apos;t expect a response within any particular timeframe.
+        </p>
       </div>
     </section>
   );

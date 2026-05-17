@@ -23,6 +23,13 @@ export default auth((req) => {
     }
   }
 
+  // /submit: any signed-in user; unsigned visitors → signin
+  if (url.pathname === "/submit" && !req.auth) {
+    const signIn = new URL("/api/auth/signin", url);
+    signIn.searchParams.set("callbackUrl", "/submit");
+    return NextResponse.redirect(signIn);
+  }
+
   return NextResponse.next();
 });
 

@@ -74,28 +74,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    // Right after a brand-new user is created by the adapter, copy the
-    // Discord snowflake from the freshly-inserted accounts row into users.
-    async createUser({ user }) {
-      if (!user.id) return;
-      const account = await db.query.accounts.findFirst({
-        where: eq(accounts.userId, user.id),
-      });
-      if (account?.provider === "discord") {
-        await db.update(users)
-          .set({ discordId: account.providerAccountId, handle: user.name ?? "anon" })
-          .where(eq(users.id, user.id));
-      }
-    },
-    // On every sign-in, push the Discord access token through the
-    // role-sync helper so users.role + users.discordRoles stay current.
+    // Fires after both users and accounts rows exist. Single source of truth
+    // for populating discord_id, handle, name, image, role, discord_roles.
     async signIn({ user, account }) {
       const accessToken = account?.access_token;
       if (account?.provider !== "discord" || !user.id || !accessToken) return;
       try {
         await syncDiscordMember(user.id, accessToken);
       } catch (err) {
-        console.error("[auth.signIn] discord role sync failed:", err);
+        console.error("[auth.signIn] discord sync failed:", err);
       }
     },
   },
