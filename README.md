@@ -1,10 +1,25 @@
 # degeneratefuckface.com
 
+![degeneratefuckface.com banner](public/brand/server-banner.png)
+
 > *A cathedral for bad ideas.*
 >
 > Hand-built on a Dell R630 in someone's house. Moderated by humans. Not affiliated with anything that wants you well-adjusted.
 
 The companion to [deadplug.digital](https://deadplug.digital). Same operator-cult industrial DNA, same self-hosted edge-to-edge posture, different tent.
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="public/brand/server-icon.png" width="160" alt="server icon" /><br/>
+      <sub><b>the face</b></sub>
+    </td>
+    <td align="center">
+      <img src="public/brand/bot-avatar.png" width="160" alt="bot avatar" /><br/>
+      <sub><b>the eye that watches it (DegenBot)</b></sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -116,7 +131,7 @@ The `bash ops/deploy.sh` script does the build + service restart for ongoing red
 
 ## License
 
-Every right deserved, none reserved. Fork it. Run a worse version. We don't care. If you ship something better, tell us in the Discord.
+MIT. Fork it. Run a worse version. We don't care. If you ship something better, tell us in the Discord. See [`LICENSE`](LICENSE).
 
 The font files in `node_modules/` are licensed by their respective owners — none of them is ours.
 
