@@ -50,3 +50,42 @@ export const SubmitSchema = z.object({
 });
 
 export type SubmitInput = z.infer<typeof SubmitSchema>;
+
+/** Feat (long-form coding showcase) submission schema. */
+export const FeatSchema = z.object({
+  title: z.string().trim().min(1, "Title required").max(200),
+  summary: z
+    .string()
+    .trim()
+    .max(320, "Summary too long")
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
+  slug: z
+    .string()
+    .trim()
+    .regex(
+      /^[a-z0-9](?:[a-z0-9-]{0,94}[a-z0-9])?$/,
+      "Slug: lowercase letters, digits, and dashes; can't start or end with a dash",
+    )
+    .max(96)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  bodyMd: z.string().max(200_000, "Writeup too long").default(""),
+  repoUrl: z
+    .string()
+    .url()
+    .regex(/^https?:\/\//, "Must be http or https")
+    .max(2000)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  demoUrl: z
+    .string()
+    .url()
+    .regex(/^https?:\/\//, "Must be http or https")
+    .max(2000)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  tags: z.array(z.string().min(1).max(40)).max(12).default([]),
+});
+
+export type FeatInput = z.infer<typeof FeatSchema>;

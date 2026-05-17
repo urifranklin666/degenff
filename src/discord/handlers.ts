@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { showcaseEmbed, submissionQueueEmbed } from "./embeds";
 
-const { submissions, modActions, users } = schema;
+const { submissions, feats, modActions, users } = schema;
 
 export async function onSubmissionButton(interaction: ButtonInteraction) {
   const [, action, submissionId] = interaction.customId.split(":");
@@ -132,12 +132,104 @@ export async function onGuildMemberUpdate(_oldMember: GuildMember, newMember: Gu
     .where(eq(users.discordId, newMember.user.id));
 }
 
+async function onFeatButton(interaction: ButtonInteraction) {
+  const [, action, featId] = interaction.customId.split(":");
+  if (!featId) return;
+
+  const actingDiscordId = interaction.user.id;
+  const mod = await db.query.users.findFirst({
+    where: eq(users.discordId, actingDiscordId),
+  });
+  // Server-side authz: only mod or admin may decide on a feat.
+  if (!mod || (mod.role !== "mod" && mod.role !== "admin")) {
+    return interaction.reply({ content: "You don't have the role for that.", ephemeral: true });
+  }
+  const modUserId = mod.id;
+
+  const f = await db.query.feats.findFirst({ where: eq(feats.id, featId) });
+  if (!f) return interaction.reply({ content: "Feat missing.", ephemeral: true });
+
+  if (action === "approve" || action === "feature") {
+    if (f.status === "approved") {
+      return interaction.reply({ content: "Already approved.", ephemeral: true });
+    }
+    await db.update(feats)
+      .set({ status: "approved", publishedAt: new Date() })
+      .where(eq(feats.id, featId));
+    await db.insert(modActions).values({
+      featId,
+      modUserId,
+      action: action === "feature" ? "feature" : "approve",
+      source: "discord",
+    });
+
+    // Mirror to #feats showcase channel
+    const featsChannelId = process.env.DISCORD_FEATS_CHANNEL_ID;
+    if (featsChannelId) {
+      const ch = await interaction.client.channels.fetch(featsChannelId);
+      if (ch && ch.type === ChannelType.GuildText) {
+        const author = await db.query.users.findFirst({ where: eq(users.id, f.userId!) });
+        const handle = author?.handle ?? "anon";
+        const embed = new EmbedBuilder()
+          .setColor(action === "feature" ? 0xff2e7c : 0xff2222)
+          .setTitle(`⬢  ${f.title}`)
+          .setURL(`https://degeneratefuckface.com/feats/${f.slug}`)
+          .setDescription((f.summary ?? "").slice(0, 1900))
+          .addFields(
+            { name: "by", value: `@${handle}`, inline: true },
+            f.repoUrl ? { name: "repo", value: f.repoUrl, inline: true } : { name: "​", value: "​", inline: true },
+            f.demoUrl ? { name: "demo", value: f.demoUrl, inline: true } : { name: "​", value: "​", inline: true },
+          );
+        if (f.heroImagePath) embed.setImage(`https://degeneratefuckface.com/uploads/${f.heroImagePath}`);
+        await (ch as TextChannel).send({ embeds: [embed] });
+      }
+    }
+
+    await interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(action === "feature" ? 0xff2e7c : 0xff2222)
+          .setTitle(`✔ ${action === "feature" ? "FEATURED" : "Approved"}: ${f.title}`)
+          .setDescription(`by <@${interaction.user.id}> · /feats/${f.slug}`)
+          .setURL(`https://degeneratefuckface.com/feats/${f.slug}`),
+      ],
+      components: [],
+    });
+    return;
+  }
+
+  if (action === "reject") {
+    await db.update(feats)
+      .set({ status: "rejected" })
+      .where(eq(feats.id, featId));
+    await db.insert(modActions).values({
+      featId,
+      modUserId,
+      action: "reject",
+      source: "discord",
+    });
+    await interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x4a0000)
+          .setTitle("✘ Rejected")
+          .setDescription(`Rejected by <@${interaction.user.id}>`)
+          .setFooter({ text: `feat id ${featId}` }),
+      ],
+      components: [],
+    });
+  }
+}
+
 export function registerHandlers(client: Client) {
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isButton()) return;
-    if (!interaction.customId.startsWith("sub:")) return;
+    const isSub = interaction.customId.startsWith("sub:");
+    const isFeat = interaction.customId.startsWith("feat:");
+    if (!isSub && !isFeat) return;
     try {
-      await onSubmissionButton(interaction);
+      if (isSub) await onSubmissionButton(interaction);
+      if (isFeat) await onFeatButton(interaction);
     } catch (err) {
       console.error("[bot] interaction failed:", err);
       if (!interaction.replied) {

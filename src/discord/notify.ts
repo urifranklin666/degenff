@@ -60,6 +60,74 @@ function buildModRow(submissionId: string) {
   };
 }
 
+function buildFeatEmbed(f: (typeof schema)["feats"]["$inferSelect"], authorHandle: string) {
+  const fields: { name: string; value: string; inline?: boolean }[] = [
+    { name: "by", value: `@${authorHandle}`, inline: true },
+    { name: "slug", value: `\`${f.slug}\``, inline: true },
+  ];
+  if (f.repoUrl) fields.push({ name: "repo", value: f.repoUrl });
+  if (f.demoUrl) fields.push({ name: "demo", value: f.demoUrl });
+  if (f.tags?.length) fields.push({
+    name: "tags",
+    value: f.tags.slice(0, 12).map((t) => `\`${t}\``).join(" "),
+  });
+
+  const embed: Record<string, unknown> = {
+    title: `⬢  ${f.title}`,
+    url: `${SITE}/feats/${f.slug}`,
+    description: (f.summary ?? f.bodyMd.slice(0, 600)).slice(0, 1900),
+    color: 0xcc0000,
+    fields,
+    footer: { text: `feat id ${f.id} · ${new Date(f.createdAt).toISOString()}` },
+  };
+  if (f.heroImagePath) {
+    embed.image = { url: `${SITE}/uploads/${f.heroImagePath}` };
+  }
+  return embed;
+}
+
+function buildFeatModRow(featId: string) {
+  return {
+    type: 1,
+    components: [
+      { type: 2, style: 3, label: "Approve", custom_id: `feat:approve:${featId}` },
+      { type: 2, style: 1, label: "Feature", custom_id: `feat:feature:${featId}` },
+      { type: 2, style: 4, label: "Reject",  custom_id: `feat:reject:${featId}` },
+      { type: 2, style: 5, label: "Open on site", url: `${SITE}/feats` },
+    ],
+  };
+}
+
+export async function notifyNewFeat(featId: string) {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  const channelId = process.env.DISCORD_MOD_QUEUE_CHANNEL_ID;
+  if (!token || !channelId) return;
+
+  const f = await db.query.feats.findFirst({
+    where: eq(schema.feats.id, featId),
+  });
+  if (!f) return;
+  const author = f.userId
+    ? await db.query.users.findFirst({ where: eq(users.id, f.userId) })
+    : null;
+
+  const r = await fetch(
+    `https://discord.com/api/v10/channels/${channelId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        embeds: [buildFeatEmbed(f, author?.handle ?? "anon")],
+        components: [buildFeatModRow(f.id)],
+      }),
+    },
+  );
+  if (!r.ok) throw new Error(`discord feat post ${r.status}`);
+}
+
 export async function notifyNewSubmission(submissionId: string) {
   const token = process.env.DISCORD_BOT_TOKEN;
   const channelId = process.env.DISCORD_MOD_QUEUE_CHANNEL_ID;

@@ -19,9 +19,12 @@ export default async function FeatsPage() {
       <div className="container">
         <p className="eyebrow">Long-Form</p>
         <h1 className="section-title">Coding Feats</h1>
-        <p className="lede" style={{ marginBottom: "2.5rem" }}>
+        <p className="lede" style={{ marginBottom: "1.25rem" }}>
           The case-study format for projects that finished. Repos, demos, post-mortems.
           Weird hardware especially welcome.
+        </p>
+        <p style={{ marginBottom: "2.5rem" }}>
+          <Link href="/feats/new" className="btn no-underline">Submit A Feat</Link>
         </p>
 
         {published.length === 0 ? (

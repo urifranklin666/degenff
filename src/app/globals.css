@@ -986,6 +986,73 @@ hr {
 }
 .submit-form .form-error strong { color: var(--text-bright); margin-right: 0.4rem; text-transform: uppercase; letter-spacing: 0.14em; }
 
+/* feat detail page (sanitized markdown body) */
+.feat-hero {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border-mid);
+  margin: 1.25rem 0 2rem;
+  background: var(--surface);
+}
+.feat-body {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+.feat-body h1, .feat-body h2, .feat-body h3, .feat-body h4 {
+  font-family: var(--slam);
+  text-transform: uppercase;
+  color: var(--text-bright);
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin-top: 2.25rem;
+  margin-bottom: 0.9rem;
+}
+.feat-body h1 { font-size: clamp(1.8rem, 3vw, 2.6rem); }
+.feat-body h2 { font-size: clamp(1.5rem, 2.5vw, 2.1rem); }
+.feat-body h3 { font-size: clamp(1.2rem, 2vw, 1.55rem); }
+.feat-body p, .feat-body ul, .feat-body ol, .feat-body blockquote {
+  margin-bottom: 1.1rem;
+}
+.feat-body ul, .feat-body ol { padding-left: 1.5rem; }
+.feat-body li { margin-bottom: 0.35rem; }
+.feat-body blockquote {
+  border-left: 3px solid var(--red);
+  padding: 0.35rem 1rem;
+  color: var(--text-mid);
+  font-family: var(--menace);
+  font-style: italic;
+}
+.feat-body code {
+  background: var(--surface-2);
+  color: var(--cyan);
+  border: 1px solid var(--border-mid);
+  padding: 0 0.3em;
+}
+.feat-body pre {
+  background: #000;
+  border: 1px solid var(--red-deeper);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  box-shadow: 4px 4px 0 0 var(--red-deeper);
+}
+.feat-body pre code { border: none; background: none; color: var(--text); padding: 0; }
+.feat-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-family: var(--mono); font-size: 0.92rem;
+}
+.feat-body th, .feat-body td {
+  border: 1px solid var(--border-mid);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+}
+.feat-body th { background: var(--surface-2); color: var(--text-bright); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }
+.feat-body hr { margin: 2rem 0; }
+
 /* submission detail page */
 .submission-files {
   display: grid; gap: 1rem;
