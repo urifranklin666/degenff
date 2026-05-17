@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <radialGradient id="bloomTL" cx="0%" cy="0%" r="80%">
+      <stop offset="0%"  stop-color="#cc0000" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#040404" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bloomBR" cx="100%" cy="100%" r="80%">
+      <stop offset="0%"  stop-color="#ff2e7c" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#040404" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="960" height="540" fill="#040404"/>
+  <rect width="960" height="540" fill="url(#bloomTL)"/>
+  <rect width="960" height="540" fill="url(#bloomBR)"/>
+
+  <!-- 24px grid -->
+  <g stroke="rgba(204,0,0,0.04)" stroke-width="1">
+    <line x1="0" y1="24"  x2="960" y2="24"/>
+    <line x1="0" y1="48"  x2="960" y2="48"/>
+    <line x1="0" y1="72"  x2="960" y2="72"/>
+    <line x1="0" y1="96"  x2="960" y2="96"/>
+    <line x1="0" y1="120" x2="960" y2="120"/>
+    <line x1="0" y1="144" x2="960" y2="144"/>
+    <line x1="0" y1="168" x2="960" y2="168"/>
+    <line x1="0" y1="192" x2="960" y2="192"/>
+    <line x1="0" y1="216" x2="960" y2="216"/>
+    <line x1="0" y1="240" x2="960" y2="240"/>
+    <line x1="0" y1="264" x2="960" y2="264"/>
+    <line x1="0" y1="288" x2="960" y2="288"/>
+    <line x1="0" y1="312" x2="960" y2="312"/>
+    <line x1="0" y1="336" x2="960" y2="336"/>
+    <line x1="0" y1="360" x2="960" y2="360"/>
+    <line x1="0" y1="384" x2="960" y2="384"/>
+    <line x1="0" y1="408" x2="960" y2="408"/>
+    <line x1="0" y1="432" x2="960" y2="432"/>
+    <line x1="0" y1="456" x2="960" y2="456"/>
+    <line x1="0" y1="480" x2="960" y2="480"/>
+    <line x1="0" y1="504" x2="960" y2="504"/>
+  </g>
+
+  <!-- TOP bulb marquee strip -->
+  <rect x="0" y="0" width="960" height="42" fill="#0c0303"/>
+  <line x1="0" y1="42" x2="960" y2="42" stroke="#000" stroke-width="2"/>
+  <g fill="#ff2222">
+    <circle cx="24"  cy="21" r="5"/>
+    <circle cx="60"  cy="21" r="5"/>
+    <circle cx="96"  cy="21" r="5"/>
+    <circle cx="132" cy="21" r="5"/>
+    <circle cx="168" cy="21" r="5"/>
+    <circle cx="204" cy="21" r="5"/>
+    <circle cx="240" cy="21" r="5"/>
+    <circle cx="276" cy="21" r="5"/>
+    <circle cx="312" cy="21" r="5"/>
+    <circle cx="348" cy="21" r="5"/>
+    <circle cx="384" cy="21" r="5"/>
+    <circle cx="420" cy="21" r="5"/>
+    <circle cx="456" cy="21" r="5"/>
+    <circle cx="492" cy="21" r="5"/>
+    <circle cx="528" cy="21" r="5"/>
+    <circle cx="564" cy="21" r="5"/>
+    <circle cx="600" cy="21" r="5"/>
+    <circle cx="636" cy="21" r="5"/>
+    <circle cx="672" cy="21" r="5"/>
+    <circle cx="708" cy="21" r="5"/>
+    <circle cx="744" cy="21" r="5"/>
+    <circle cx="780" cy="21" r="5"/>
+    <circle cx="816" cy="21" r="5"/>
+    <circle cx="852" cy="21" r="5"/>
+    <circle cx="888" cy="21" r="5"/>
+    <circle cx="924" cy="21" r="5"/>
+  </g>
+
+  <!-- BOTTOM bulb marquee strip -->
+  <rect x="0" y="498" width="960" height="42" fill="#0c0303"/>
+  <line x1="0" y1="498" x2="960" y2="498" stroke="#000" stroke-width="2"/>
+  <g fill="#ff2222">
+    <circle cx="24"  cy="519" r="5"/>
+    <circle cx="60"  cy="519" r="5"/>
+    <circle cx="96"  cy="519" r="5"/>
+    <circle cx="132" cy="519" r="5"/>
+    <circle cx="168" cy="519" r="5"/>
+    <circle cx="204" cy="519" r="5"/>
+    <circle cx="240" cy="519" r="5"/>
+    <circle cx="276" cy="519" r="5"/>
+    <circle cx="312" cy="519" r="5"/>
+    <circle cx="348" cy="519" r="5"/>
+    <circle cx="384" cy="519" r="5"/>
+    <circle cx="420" cy="519" r="5"/>
+    <circle cx="456" cy="519" r="5"/>
+    <circle cx="492" cy="519" r="5"/>
+    <circle cx="528" cy="519" r="5"/>
+    <circle cx="564" cy="519" r="5"/>
+    <circle cx="600" cy="519" r="5"/>
+    <circle cx="636" cy="519" r="5"/>
+    <circle cx="672" cy="519" r="5"/>
+    <circle cx="708" cy="519" r="5"/>
+    <circle cx="744" cy="519" r="5"/>
+    <circle cx="780" cy="519" r="5"/>
+    <circle cx="816" cy="519" r="5"/>
+    <circle cx="852" cy="519" r="5"/>
+    <circle cx="888" cy="519" r="5"/>
+    <circle cx="924" cy="519" r="5"/>
+  </g>
+
+  <!-- eyebrow stamp -->
+  <g transform="translate(56 78) rotate(-2)">
+    <rect x="0" y="0" width="200" height="32" fill="#000" stroke="#cc0000" stroke-width="2"/>
+    <text x="100" y="22" font-family="IBM Plex Mono" font-weight="700" font-size="14"
+          text-anchor="middle" fill="#ff2222" letter-spacing="3">// WELCOME INSIDE //</text>
+  </g>
+
+  <!-- DEGENERATE — Anton, white, with chromatic split via two color offset copies -->
+  <g>
+    <text x="56" y="240" font-family="Anton" font-size="150" fill="#00f5d4"
+          letter-spacing="-2" opacity="0.85">DEGENERATE</text>
+    <text x="60" y="240" font-family="Anton" font-size="150" fill="#ff2e7c"
+          letter-spacing="-2" opacity="0.85">DEGENERATE</text>
+    <text x="58" y="240" font-family="Anton" font-size="150" fill="#ffffff"
+          letter-spacing="-2">DEGENERATE</text>
+  </g>
+
+  <!-- FUCKFACE — Anton, oxblood, skewed (transform=skewX) -->
+  <g transform="translate(56 380) skewX(-6)">
+    <text x="0" y="0" font-family="Anton" font-size="170" fill="#cc0000"
+          letter-spacing="-3">FUCKFACE</text>
+  </g>
+
+  <!-- subhead in Plex Mono -->
+  <text x="56" y="440" font-family="IBM Plex Mono" font-weight="700" font-size="16"
+        fill="#e6e3df" letter-spacing="6">
+    ★ THE DOOR LOCKED BEHIND YOU ★ STEP INSIDE ★ NO PHONES IN THE CHAPEL ★
+  </text>
+
+  <!-- top-right sigil watermark -->
+  <g transform="translate(740 100)" opacity="0.85">
+    <rect x="0" y="0" width="170" height="170" fill="none" stroke="#000" stroke-width="6"/>
+    <rect x="8" y="8" width="154" height="154" fill="#cc0000"/>
+    <!-- eyes / mouth -->
+    <g fill="#040404">
+      <rect x="22" y="58" width="56" height="10"/>
+      <rect x="92" y="62" width="60" height="9" transform="rotate(2 122 67)"/>
+      <rect x="80" y="98" width="11" height="50"/>
+    </g>
+    <circle cx="60" cy="63" r="5" fill="#ff5aa0"/>
+  </g>
+
+  <!-- bottom-right URL -->
+  <text x="904" y="478" font-family="IBM Plex Mono" font-weight="700" font-size="14"
+        fill="#969696" text-anchor="end" letter-spacing="2">degeneratefuckface.com</text>
+</svg>
