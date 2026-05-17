@@ -51,11 +51,15 @@ export const users = pgTable(
   "users",
   {
     id: text("id").primaryKey().$defaultFn(() => nanoid(21)),
-    discordId: varchar("discord_id", { length: 32 }).notNull(),
-    handle: varchar("handle", { length: 64 }).notNull(),
-    displayName: varchar("display_name", { length: 96 }),
-    avatarUrl: text("avatar_url"),
+    // discord_id is populated by an event hook after the adapter creates the
+    // user; nullable so the unique index allows multiple in-flight nulls.
+    discordId: varchar("discord_id", { length: 32 }),
+    handle: varchar("handle", { length: 64 }).notNull().default("anon"),
+    // Auth.js Drizzle adapter expects these names verbatim.
+    name: varchar("display_name", { length: 96 }),
+    image: text("avatar_url"),
     email: varchar("email", { length: 255 }),
+    emailVerified: timestamp("email_verified", { withTimezone: true }),
     role: userRole("role").notNull().default("contributor"),
     banned: boolean("banned").notNull().default(false),
     bannedReason: text("banned_reason"),
@@ -78,13 +82,14 @@ export const accounts = pgTable(
     type: text("type").notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("provider_account_id").notNull(),
-    refreshToken: text("refresh_token"),
-    accessToken: text("access_token"),
-    expiresAt: integer("expires_at"),
-    tokenType: text("token_type"),
+    // Auth.js Drizzle adapter expects these property names verbatim (snake_case).
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
     scope: text("scope"),
-    idToken: text("id_token"),
-    sessionState: text("session_state"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
   },
   (t) => [primaryKey({ columns: [t.provider, t.providerAccountId] })],
 );
