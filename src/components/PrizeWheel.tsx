@@ -1,6 +1,12 @@
 /**
  * Slow-spinning cursed wheel — pure CSS conic-gradient with an inner iris.
- * Labels float at fixed angles around the wheel via inline transform.
+ * Labels are positioned with CSS sin/cos so they sit on their wedges, and
+ * spin together with the wheel via a matching animation on the labels layer.
+ *
+ * Conic-gradient default starts at 0deg = top, sweeping clockwise.
+ * Wedge i covers (i*45)..(i+1)*45; label sits at the wedge center i*45+22.5.
+ *   x_offset = sin(angle) * r   (right = +)
+ *   y_offset = -cos(angle) * r  (CSS top, top = -)
  */
 const LABELS = [
   "LOSE",
@@ -13,6 +19,8 @@ const LABELS = [
   "WAIT",
 ];
 
+const RADIUS = 36; // % of wrapper
+
 export default function PrizeWheel() {
   return (
     <div className="prize-wheel-wrap" aria-hidden>
@@ -20,13 +28,14 @@ export default function PrizeWheel() {
       <div className="prize-wheel" />
       <div className="prize-wheel-labels">
         {LABELS.map((label, i) => {
-          const deg = (360 / LABELS.length) * i - 90 + 22.5; // center of wedge
-          const r = 42; // % from center
+          const angle = i * 45 + 22.5;
           return (
             <span
               key={label}
               style={{
-                transform: `rotate(${deg}deg) translate(${r}%) rotate(${-deg}deg) translate(-50%, -50%)`,
+                left: `calc(50% + sin(${angle}deg) * ${RADIUS}%)`,
+                top: `calc(50% - cos(${angle}deg) * ${RADIUS}%)`,
+                transform: `translate(-50%, -50%) rotate(${angle}deg)`,
               }}
             >
               {label}

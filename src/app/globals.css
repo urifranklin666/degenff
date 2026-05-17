@@ -622,23 +622,24 @@ hr {
   75% { transform: translate(-2%, -1%); }
 }
 
-/* wheel labels — radial pseudo-text around */
+/* wheel labels — placed radially via sin/cos in inline styles; ride the wheel
+   so they appear to be printed on the wedges */
 .prize-wheel-labels {
   position: absolute; inset: 0;
   pointer-events: none;
   font-family: var(--slam);
   text-transform: uppercase;
   color: #fff;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  font-size: clamp(0.7rem, 1.4vw, 1rem);
+  letter-spacing: 0.06em;
   z-index: 3;
+  animation: wheelSpin 96s linear infinite;
 }
 .prize-wheel-labels span {
   position: absolute;
-  left: 50%; top: 50%;
-  transform-origin: 0 0;
-  text-shadow: 0 1px 0 #000, 0 0 6px #000;
-  opacity: 0.85;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 #000, 0 0 6px #000, 0 0 1px #000;
+  opacity: 0.95;
 }
 
 /* ─── tiles (harder off-axis) ────────────────────────────────────────── */
