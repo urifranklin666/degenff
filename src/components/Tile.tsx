@@ -6,11 +6,14 @@ type Props = {
   title: string;
   body: ReactNode;
   tags?: string[];
+  stamp?: string;
+  skew?: "l" | "r";
 };
 
-export default function Tile({ index, glyph, title, body, tags = [] }: Props) {
+export default function Tile({ index, glyph, title, body, tags = [], stamp, skew }: Props) {
+  const skewClass = skew === "l" ? "skew-l" : skew === "r" ? "skew-r" : "";
   return (
-    <article className="tile">
+    <article className={`tile jitter-hover ${skewClass}`} data-stamp={stamp ?? ""}>
       <span className="tile-index">{index}</span>
       <span className="tile-glyph" aria-hidden>{glyph}</span>
       <h3 className="tile-title">{title}</h3>

@@ -16,9 +16,7 @@ export default function Nav() {
           <Link href="/feats" role="menuitem">Feats</Link>
           <Link href="/discord" role="menuitem">Discord</Link>
           <Link href="/about" role="menuitem">About</Link>
-          <Link href="/submit" role="menuitem" className="btn no-underline" style={{ padding: "0.45rem 0.85rem" }}>
-            Submit
-          </Link>
+          <Link href="/submit" role="menuitem" className="btn no-underline">Submit</Link>
         </div>
       </div>
     </nav>
