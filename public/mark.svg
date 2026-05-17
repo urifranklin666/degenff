@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="degeneratefuckface.com mark">
+  <rect width="32" height="32" fill="#080808"/>
+  <g fill="#cc0000">
+    <!-- broken hex / pulled-pixel -->
+    <rect x="6" y="6" width="20" height="20"/>
+  </g>
+  <g fill="#080808">
+    <rect x="11" y="10" width="3" height="12"/>
+    <rect x="18" y="10" width="3" height="12"/>
+    <rect x="11" y="18" width="10" height="3"/>
+  </g>
+  <g fill="#ff2222">
+    <rect x="14" y="13" width="1" height="6"/>
+  </g>
+</svg>
