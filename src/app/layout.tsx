@@ -4,7 +4,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import TeethRain from "@/components/TeethRain";
-import EyeCursor from "@/components/EyeCursor";
+import Heartbeat from "@/components/Heartbeat";
 
 // Anton — ultra-condensed brutal sans for slam headlines
 const anton = Anton({
@@ -74,14 +74,14 @@ export default function RootLayout({
         <div className="bloom" aria-hidden />
         <div className="grid-bg" aria-hidden />
         <div className="grime" aria-hidden />
-        <TeethRain count={14} />
+        <TeethRain count={22} />
         <div className="scanlines" aria-hidden />
-        <EyeCursor />
         <div className="page">
           <Nav />
           <main>{children}</main>
           <Footer />
         </div>
+        <Heartbeat />
       </body>
     </html>
   );

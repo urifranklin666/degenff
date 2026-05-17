@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-type Tone = "gold" | "fuchsia" | "cyan" | "red" | "banned";
-type Rot = "r-3" | "r-6" | "r-n8" | "r-n12";
+type Tone = "gold" | "fuchsia" | "cyan" | "red" | "banned" | "evidence";
+type Rot = "r-3" | "r-6" | "r-n8" | "r-n12" | "r-n4";
 
 type Props = {
   children: ReactNode;

@@ -1,23 +1,41 @@
 import type { ReactNode } from "react";
 
 /**
- * RGB chromatic-aberration headline. Renders the same text three times:
- * the base layer (white), cyan offset, fuchsia offset — driven by the
- * .glitch class in globals.css.
+ * RGB chromatic-aberration headline. Optionally cycles through alt-text
+ * values that briefly flash in to replace the primary. Use sparingly.
+ *
+ *   <Glitch text="DEGENERATE" alts={["DECOMPOSE", "DESECRATE"]} />
  */
+type Tag = keyof React.JSX.IntrinsicElements;
+
 export default function Glitch({
   text,
-  as: Tag = "span",
+  alts,
+  as = "span" as Tag,
   className,
 }: {
   text: string;
-  as?: keyof React.JSX.IntrinsicElements;
+  alts?: string[];
+  as?: Tag;
   className?: string;
 }) {
-  const Component = Tag as unknown as React.ElementType;
-  return (
+  const Component = as as unknown as React.ElementType;
+  const base = (
     <Component className={`glitch ${className ?? ""}`} data-text={text}>
       {text as ReactNode}
     </Component>
+  );
+
+  if (!alts || alts.length === 0) return base;
+
+  return (
+    <span className="glitch-cycle">
+      {base}
+      {alts.slice(0, 2).map((alt, i) => (
+        <span key={i} className={`alt alt-${i + 1}`} aria-hidden>
+          <span className="glitch" data-text={alt}>{alt}</span>
+        </span>
+      ))}
+    </span>
   );
 }
