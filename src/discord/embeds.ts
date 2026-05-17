@@ -85,6 +85,46 @@ export function showcaseEmbed(s: Submission, authorHandle: string) {
     .setURL(`https://degeneratefuckface.com/submissions/${s.id}`);
 }
 
+/** Buttons attached to a submission's showcase mirror message.
+ * Always has Withdraw + Open. Adds Unfeature if currently featured. */
+export function submissionShowcaseRow(submissionId: string, featured: boolean) {
+  const row = new ActionRowBuilder<ButtonBuilder>();
+  if (featured) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`sub:unfeature:${submissionId}`)
+        .setLabel("Unfeature")
+        .setStyle(ButtonStyle.Secondary),
+    );
+  }
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`sub:withdraw:${submissionId}`)
+      .setLabel("Withdraw")
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setLabel("Open on site")
+      .setStyle(ButtonStyle.Link)
+      .setURL(`https://degeneratefuckface.com/submissions/${submissionId}`),
+  );
+  return row;
+}
+
+/** Buttons attached to a feat's showcase mirror message. Feats have no
+ * 'featured' flag, so just Withdraw + Open. */
+export function featShowcaseRow(featSlug: string, featId: string) {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`feat:withdraw:${featId}`)
+      .setLabel("Withdraw")
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setLabel("Open on site")
+      .setStyle(ButtonStyle.Link)
+      .setURL(`https://degeneratefuckface.com/feats/${featSlug}`),
+  );
+}
+
 export function featQueueEmbed(f: Feat, authorHandle: string) {
   return new EmbedBuilder()
     .setColor(COLORS.pending)
