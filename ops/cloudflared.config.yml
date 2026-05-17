@@ -1,0 +1,15 @@
+tunnel: REPLACE_WITH_YOUR_TUNNEL_UUID
+credentials-file: /etc/cloudflared/REPLACE_WITH_YOUR_TUNNEL_UUID.json
+
+ingress:
+  - hostname: degeneratefuckface.com
+    service: http://127.0.0.1:3000
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 30s
+  - hostname: www.degeneratefuckface.com
+    service: http://127.0.0.1:3000
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 30s
+  - service: http_status:404
