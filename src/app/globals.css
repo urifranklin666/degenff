@@ -986,6 +986,37 @@ hr {
 }
 .submit-form .form-error strong { color: var(--text-bright); margin-right: 0.4rem; text-transform: uppercase; letter-spacing: 0.14em; }
 
+/* discord landing page stats strip */
+.discord-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0;
+  margin-top: 2.25rem;
+  border: 2px solid #000;
+  background: var(--surface);
+  box-shadow: 5px 5px 0 0 var(--red-deeper);
+}
+.discord-stats .stat {
+  padding: 1rem 1.15rem;
+  border-right: 1px solid var(--border-mid);
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.discord-stats .stat:last-child { border-right: none; }
+.discord-stats .num {
+  font-family: var(--slam);
+  font-size: clamp(1.6rem, 3.4vw, 2.6rem);
+  color: var(--red-bright);
+  line-height: 1;
+  text-shadow: 0 0 14px var(--red-glow);
+}
+.discord-stats .label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-mid);
+}
+
 /* feat detail page (sanitized markdown body) */
 .feat-hero {
   width: 100%;
