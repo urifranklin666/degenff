@@ -12,6 +12,9 @@ EnvironmentFile=/etc/degenff/env
 ExecStart=/usr/bin/node /home/deadplug/Degeneracy/node_modules/.bin/tsx /home/deadplug/Degeneracy/src/discord/bot.ts
 Restart=always
 RestartSec=5
+# Bound the stop phase — if the process ever ignores SIGTERM again, SIGKILL
+# at 15s instead of the 90s default.
+TimeoutStopSec=15
 StandardOutput=journal
 StandardError=journal
 

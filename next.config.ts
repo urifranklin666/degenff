@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  // Allow LAN hosts to talk to the dev HMR socket. Dev-only, ignored in prod.
+  allowedDevOrigins: ["192.168.1.201"],
+
   // We serve user uploads from /uploads/* via the same origin. next/image gets
   // the optimization path; pattern allow-lists are required after v16.
   images: {

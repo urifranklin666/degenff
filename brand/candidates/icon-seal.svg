@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Concept 2: THE EVIDENCE SEAL — concentric stamp, clean central
+       diamond glyph (◈). Circle-native. -->
+  <defs>
+    <radialGradient id="sl-bg" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#140a09"/>
+      <stop offset="60%" stop-color="#070303"/>
+      <stop offset="100%" stop-color="#020202"/>
+    </radialGradient>
+    <radialGradient id="sl-bloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#cc0000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#cc0000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#sl-bg)"/>
+  <circle cx="256" cy="256" r="186" fill="url(#sl-bloom)"/>
+
+  <!-- outer hairline rings -->
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#000000" stroke-width="10"/>
+  <circle cx="256" cy="256" r="222" fill="none" stroke="#e6e3df" stroke-width="2"/>
+
+  <!-- engraved band: oxblood ring + fine tick overlay (microtext stand-in) -->
+  <circle cx="256" cy="256" r="201" fill="none" stroke="#cc0000" stroke-width="28"/>
+  <circle cx="256" cy="256" r="201" fill="none" stroke="#1c0000" stroke-width="28"
+          stroke-dasharray="2.5 13" stroke-linecap="butt"/>
+  <circle cx="256" cy="256" r="185" fill="none" stroke="#e6e3df" stroke-width="2"/>
+  <circle cx="256" cy="256" r="217" fill="none" stroke="#7c0000" stroke-width="2"/>
+
+  <!-- inner field -->
+  <circle cx="256" cy="256" r="170" fill="#0c0606"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#cc0000" stroke-width="3"/>
+
+  <!-- central diamond glyph (◈), slightly hand-stamped off-axis -->
+  <g transform="rotate(-7 256 256)">
+    <path d="M 256 141 L 371 256 L 256 371 L 141 256 Z"
+          fill="#cc0000" stroke="#e6e3df" stroke-width="2.5"/>
+    <path d="M 256 213 L 299 256 L 256 299 L 213 256 Z" fill="#0c0606"/>
+  </g>
+</svg>

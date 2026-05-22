@@ -1,125 +1,64 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <!-- Invite splash — full-bleed showcase. Keyhole right, manifesto-voice
+       wordmark left, classification strip, grid + scanlines. -->
   <defs>
-    <radialGradient id="bloomTL" cx="15%" cy="0%" r="80%">
-      <stop offset="0%"  stop-color="#cc0000" stop-opacity="0.30"/>
-      <stop offset="100%" stop-color="#040404" stop-opacity="0"/>
+    <radialGradient id="sp-bg" cx="66%" cy="38%" r="92%">
+      <stop offset="0%" stop-color="#1c0d0b"/>
+      <stop offset="52%" stop-color="#0a0403"/>
+      <stop offset="100%" stop-color="#020202"/>
     </radialGradient>
-    <radialGradient id="bloomBR" cx="100%" cy="100%" r="80%">
-      <stop offset="0%"  stop-color="#ff2e7c" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#040404" stop-opacity="0"/>
+    <radialGradient id="sp-bloom" cx="70%" cy="46%" r="42%">
+      <stop offset="0%" stop-color="#cc0000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#cc0000" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="sp-key" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff3636"/>
+      <stop offset="50%" stop-color="#cc0000"/>
+      <stop offset="100%" stop-color="#7c0000"/>
+    </linearGradient>
+    <pattern id="sp-grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#cc0000" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <pattern id="sp-scan" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="3" fill="#000000" fill-opacity="0.22"/>
+    </pattern>
   </defs>
 
-  <rect width="1920" height="1080" fill="#040404"/>
-  <rect width="1920" height="1080" fill="url(#bloomTL)"/>
-  <rect width="1920" height="1080" fill="url(#bloomBR)"/>
+  <rect width="1920" height="1080" fill="url(#sp-bg)"/>
+  <rect width="1920" height="1080" fill="url(#sp-grid)"/>
+  <circle cx="1300" cy="520" r="560" fill="url(#sp-bloom)"/>
 
-  <!-- 48px grid -->
-  <g stroke="rgba(204,0,0,0.035)" stroke-width="1">
-    <line x1="0" y1="48"  x2="1920" y2="48"/>
-    <line x1="0" y1="144" x2="1920" y2="144"/>
-    <line x1="0" y1="240" x2="1920" y2="240"/>
-    <line x1="0" y1="336" x2="1920" y2="336"/>
-    <line x1="0" y1="432" x2="1920" y2="432"/>
-    <line x1="0" y1="528" x2="1920" y2="528"/>
-    <line x1="0" y1="624" x2="1920" y2="624"/>
-    <line x1="0" y1="720" x2="1920" y2="720"/>
-    <line x1="0" y1="816" x2="1920" y2="816"/>
-    <line x1="0" y1="912" x2="1920" y2="912"/>
-    <line x1="0" y1="1008" x2="1920" y2="1008"/>
-  </g>
+  <!-- classification strip -->
+  <rect x="0" y="0" width="1920" height="58" fill="#050505"/>
+  <line x1="0" y1="58" x2="1920" y2="58" stroke="#cc0000" stroke-width="2"/>
+  <text x="60" y="38" font-family="IBM Plex Mono" font-size="20" fill="#ff2222" letter-spacing="6">// RESTRICTED // EVIDENCE LOG // DEGEN OR DEATH // PROCEED VOLUNTARILY //</text>
 
-  <!-- top bulb strip -->
-  <rect x="0" y="0" width="1920" height="60" fill="#0c0303"/>
-  <line x1="0" y1="60" x2="1920" y2="60" stroke="#000" stroke-width="3"/>
-  <g fill="#ff2222">
-    <circle cx="30" cy="30" r="7"/><circle cx="78" cy="30" r="7"/><circle cx="126" cy="30" r="7"/>
-    <circle cx="174" cy="30" r="7"/><circle cx="222" cy="30" r="7"/><circle cx="270" cy="30" r="7"/>
-    <circle cx="318" cy="30" r="7"/><circle cx="366" cy="30" r="7"/><circle cx="414" cy="30" r="7"/>
-    <circle cx="462" cy="30" r="7"/><circle cx="510" cy="30" r="7"/><circle cx="558" cy="30" r="7"/>
-    <circle cx="606" cy="30" r="7"/><circle cx="654" cy="30" r="7"/><circle cx="702" cy="30" r="7"/>
-    <circle cx="750" cy="30" r="7"/><circle cx="798" cy="30" r="7"/><circle cx="846" cy="30" r="7"/>
-    <circle cx="894" cy="30" r="7"/><circle cx="942" cy="30" r="7"/><circle cx="990" cy="30" r="7"/>
-    <circle cx="1038" cy="30" r="7"/><circle cx="1086" cy="30" r="7"/><circle cx="1134" cy="30" r="7"/>
-    <circle cx="1182" cy="30" r="7"/><circle cx="1230" cy="30" r="7"/><circle cx="1278" cy="30" r="7"/>
-    <circle cx="1326" cy="30" r="7"/><circle cx="1374" cy="30" r="7"/><circle cx="1422" cy="30" r="7"/>
-    <circle cx="1470" cy="30" r="7"/><circle cx="1518" cy="30" r="7"/><circle cx="1566" cy="30" r="7"/>
-    <circle cx="1614" cy="30" r="7"/><circle cx="1662" cy="30" r="7"/><circle cx="1710" cy="30" r="7"/>
-    <circle cx="1758" cy="30" r="7"/><circle cx="1806" cy="30" r="7"/><circle cx="1854" cy="30" r="7"/>
-    <circle cx="1902" cy="30" r="7"/>
-  </g>
+  <!-- bottom strip -->
+  <line x1="0" y1="1022" x2="1920" y2="1022" stroke="#cc0000" stroke-width="2"/>
+  <text x="60" y="1058" font-family="IBM Plex Mono" font-size="22" fill="#8a857f" letter-spacing="5">degeneratefuckface.com</text>
+  <text x="1860" y="1058" text-anchor="end" font-family="IBM Plex Mono" font-size="22" fill="#8a857f" letter-spacing="5">file no&#183;001 &#183; self-hosted &#183; ground-up</text>
 
-  <!-- bottom bulb strip -->
-  <rect x="0" y="1020" width="1920" height="60" fill="#0c0303"/>
-  <line x1="0" y1="1020" x2="1920" y2="1020" stroke="#000" stroke-width="3"/>
-  <g fill="#ff2222">
-    <circle cx="30" cy="1050" r="7"/><circle cx="78" cy="1050" r="7"/><circle cx="126" cy="1050" r="7"/>
-    <circle cx="174" cy="1050" r="7"/><circle cx="222" cy="1050" r="7"/><circle cx="270" cy="1050" r="7"/>
-    <circle cx="318" cy="1050" r="7"/><circle cx="366" cy="1050" r="7"/><circle cx="414" cy="1050" r="7"/>
-    <circle cx="462" cy="1050" r="7"/><circle cx="510" cy="1050" r="7"/><circle cx="558" cy="1050" r="7"/>
-    <circle cx="606" cy="1050" r="7"/><circle cx="654" cy="1050" r="7"/><circle cx="702" cy="1050" r="7"/>
-    <circle cx="750" cy="1050" r="7"/><circle cx="798" cy="1050" r="7"/><circle cx="846" cy="1050" r="7"/>
-    <circle cx="894" cy="1050" r="7"/><circle cx="942" cy="1050" r="7"/><circle cx="990" cy="1050" r="7"/>
-    <circle cx="1038" cy="1050" r="7"/><circle cx="1086" cy="1050" r="7"/><circle cx="1134" cy="1050" r="7"/>
-    <circle cx="1182" cy="1050" r="7"/><circle cx="1230" cy="1050" r="7"/><circle cx="1278" cy="1050" r="7"/>
-    <circle cx="1326" cy="1050" r="7"/><circle cx="1374" cy="1050" r="7"/><circle cx="1422" cy="1050" r="7"/>
-    <circle cx="1470" cy="1050" r="7"/><circle cx="1518" cy="1050" r="7"/><circle cx="1566" cy="1050" r="7"/>
-    <circle cx="1614" cy="1050" r="7"/><circle cx="1662" cy="1050" r="7"/><circle cx="1710" cy="1050" r="7"/>
-    <circle cx="1758" cy="1050" r="7"/><circle cx="1806" cy="1050" r="7"/><circle cx="1854" cy="1050" r="7"/>
-    <circle cx="1902" cy="1050" r="7"/>
-  </g>
+  <!-- partial gauge arc -->
+  <circle cx="1336" cy="556" r="430" fill="none" stroke="#cc0000" stroke-width="14"
+          stroke-dasharray="4 40" opacity="0.5"/>
 
-  <!-- eyebrow stamp -->
-  <g transform="translate(120 140) rotate(-1.5)">
-    <rect x="0" y="0" width="380" height="50" fill="#000" stroke="#cc0000" stroke-width="3"/>
-    <text x="190" y="35" font-family="IBM Plex Mono" font-weight="700" font-size="22"
-          text-anchor="middle" fill="#ff2222" letter-spacing="6">// DOORS OPEN //</text>
-  </g>
-
-  <!-- DEGENERATE — Anton, white, chromatic split -->
+  <!-- keyhole, large, right -->
   <g>
-    <text x="120" y="440" font-family="Anton" font-size="280" fill="#00f5d4"
-          letter-spacing="-3" opacity="0.85">DEGENERATE</text>
-    <text x="128" y="440" font-family="Anton" font-size="280" fill="#ff2e7c"
-          letter-spacing="-3" opacity="0.85">DEGENERATE</text>
-    <text x="124" y="440" font-family="Anton" font-size="280" fill="#ffffff"
-          letter-spacing="-3">DEGENERATE</text>
+    <circle cx="1336" cy="430" r="184" fill="#1c0000"/>
+    <path d="M 1264 396 L 1182 836 L 1490 836 L 1408 396 Z" fill="#1c0000"/>
+    <circle cx="1336" cy="430" r="168" fill="url(#sp-key)"/>
+    <path d="M 1280 408 L 1208 820 L 1464 820 L 1392 408 Z" fill="url(#sp-key)"/>
+    <ellipse cx="1284" cy="398" rx="48" ry="38" fill="#ff6868" opacity="0.48"/>
   </g>
 
-  <!-- &amp; the door locked behind you (menace serif italic) — sits between -->
-  <text x="124" y="540" font-family="Playfair Display" font-style="italic" font-weight="900"
-        font-size="62" fill="#cc0000" letter-spacing="-1">
-    &amp; the door locked behind you
-  </text>
+  <!-- wordmark -->
+  <text x="118" y="470" font-family="Anton" font-size="248" fill="#f0ebe3" letter-spacing="3">DEGEN</text>
+  <text x="118" y="694" font-family="Anton" font-size="248" fill="#cc0000" letter-spacing="3">OR DEATH</text>
 
-  <!-- FUCKFACE — Anton, oxblood, skewed -->
-  <g transform="translate(120 840) skewX(-6)">
-    <text x="0" y="0" font-family="Anton" font-size="300" fill="#cc0000"
-          letter-spacing="-4">FUCKFACE</text>
-  </g>
+  <!-- manifesto line -->
+  <text x="124" y="788" font-family="IBM Plex Mono" font-size="34" fill="#b87a7a" letter-spacing="6">YOU WERE NOT INVITED &#183; THE DOOR IS LOCKED FROM THE INSIDE</text>
+  <text x="124" y="838" font-family="IBM Plex Mono" font-size="34" fill="#b87a7a" letter-spacing="6">WE HAVE ALREADY LET YOU IN &#183; SHOES OFF &#183; PROCEED</text>
 
-  <!-- subhead in Plex Mono -->
-  <text x="120" y="940" font-family="IBM Plex Mono" font-weight="700" font-size="26"
-        fill="#e6e3df" letter-spacing="10">
-    ★ NO PHONES IN THE CHAPEL ★ NO EXITS MARKED ★
-  </text>
-
-  <!-- top-right sigil watermark (no rotated rect — flat composition) -->
-  <g transform="translate(1500 200)" opacity="0.92">
-    <rect x="0" y="0" width="320" height="320" fill="none" stroke="#000" stroke-width="10"/>
-    <rect x="16" y="16" width="288" height="288" fill="#cc0000"/>
-    <g fill="#040404">
-      <!-- left eye -->
-      <rect x="42" y="106" width="104" height="22"/>
-      <!-- right eye (slightly thinner + slightly lower for asymmetry; no rotation) -->
-      <rect x="170" y="112" width="114" height="18"/>
-      <!-- mouth -->
-      <rect x="150" y="186" width="22" height="92"/>
-    </g>
-    <circle cx="116" cy="117" r="10" fill="#ff5aa0"/>
-  </g>
-
-  <!-- bottom-right URL -->
-  <text x="1810" y="990" font-family="IBM Plex Mono" font-weight="700" font-size="24"
-        fill="#969696" text-anchor="end" letter-spacing="4">degeneratefuckface.com</text>
+  <!-- scanline overlay -->
+  <rect width="1920" height="1080" fill="url(#sp-scan)"/>
 </svg>

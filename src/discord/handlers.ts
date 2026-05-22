@@ -14,6 +14,14 @@ import {
   submissionShowcaseRow,
   featShowcaseRow,
 } from "./embeds";
+import { onGuildMemberAdd } from "./welcome";
+import { onMessageReactionAdd } from "./quotes";
+import { registerSlashCommands, onChatInputCommand } from "./slashCommands";
+import { logAudit } from "./audit";
+import { startScheduler } from "./scheduler";
+import { onVerifyStart, onVerifyAnswer } from "./verify";
+
+const SITE = "https://degeneratefuckface.com";
 
 const { submissions, feats, modActions, users } = schema;
 
@@ -86,7 +94,7 @@ async function approve(
     source: "discord",
   });
 
-  // Mirror to #showcase WITH withdraw/unfeature controls
+  // Mirror to #showcase WITH withdraw/unfeature controls, then thread it
   const showcaseChannelId = process.env.DISCORD_SHOWCASE_CHANNEL_ID;
   if (showcaseChannelId) {
     const ch = await interaction.client.channels.fetch(showcaseChannelId);
@@ -96,12 +104,26 @@ async function approve(
         { ...s, featured: feature, status: "approved" },
         author?.handle ?? "anon",
       );
-      await (ch as TextChannel).send({
+      const showMsg = await (ch as TextChannel).send({
         embeds: [embed],
         components: [submissionShowcaseRow(submissionId, feature)],
       });
+      // auto-thread for discussion (7 day auto-archive)
+      await showMsg.startThread({
+        name: `discuss · ${s.title.slice(0, 80)}`,
+        autoArchiveDuration: 10080,
+      }).catch((err) => console.error("[thread] start failed:", err));
     }
   }
+
+  await logAudit(interaction.client, {
+    modUserId,
+    action: feature ? "feature" : "approve",
+    kind: "submission",
+    itemId: submissionId,
+    itemTitle: s.title,
+    itemUrl: `${SITE}/submissions/${submissionId}`,
+  });
 
   // Update the mod-queue message in place
   const author = await db.query.users.findFirst({ where: eq(users.id, s.userId!) });
@@ -143,6 +165,14 @@ async function reject(
     source: "discord",
   });
 
+  await logAudit(interaction.client, {
+    modUserId,
+    action: "reject",
+    kind: "submission",
+    itemId: submissionId,
+    itemTitle: s.title,
+  });
+
   await interaction.update({
     embeds: [
       new EmbedBuilder()
@@ -179,6 +209,14 @@ async function withdraw(
     source: "discord",
   });
 
+  await logAudit(interaction.client, {
+    modUserId,
+    action: "withdraw",
+    kind: "submission",
+    itemId: submissionId,
+    itemTitle: s.title,
+  });
+
   await interaction.update({
     embeds: [
       new EmbedBuilder()
@@ -213,6 +251,15 @@ async function unfeature(
     modUserId,
     action: "unfeature",
     source: "discord",
+  });
+
+  await logAudit(interaction.client, {
+    modUserId,
+    action: "unfeature",
+    kind: "submission",
+    itemId: submissionId,
+    itemTitle: s.title,
+    itemUrl: `${SITE}/submissions/${submissionId}`,
   });
 
   // Re-render the showcase embed with the approved (not featured) palette
@@ -256,7 +303,7 @@ export async function onFeatButton(interaction: ButtonInteraction) {
       source: "discord",
     });
 
-    // Mirror to #feats showcase channel WITH a Withdraw control
+    // Mirror to #feats showcase channel WITH a Withdraw control, then thread it
     const featsChannelId = process.env.DISCORD_FEATS_CHANNEL_ID;
     if (featsChannelId) {
       const ch = await interaction.client.channels.fetch(featsChannelId);
@@ -274,12 +321,25 @@ export async function onFeatButton(interaction: ButtonInteraction) {
             f.demoUrl ? { name: "demo", value: f.demoUrl, inline: true } : { name: "​", value: "​", inline: true },
           );
         if (f.heroImagePath) embed.setImage(`https://degeneratefuckface.com/uploads/${f.heroImagePath}`);
-        await (ch as TextChannel).send({
+        const featMsg = await (ch as TextChannel).send({
           embeds: [embed],
           components: [featShowcaseRow(f.slug, f.id)],
         });
+        await featMsg.startThread({
+          name: `discuss · ${f.title.slice(0, 80)}`,
+          autoArchiveDuration: 10080,
+        }).catch((err) => console.error("[thread] start failed:", err));
       }
     }
+
+    await logAudit(interaction.client, {
+      modUserId,
+      action: action === "feature" ? "feature" : "approve",
+      kind: "feat",
+      itemId: featId,
+      itemTitle: f.title,
+      itemUrl: `${SITE}/feats/${f.slug}`,
+    });
 
     await interaction.update({
       embeds: [
@@ -303,6 +363,13 @@ export async function onFeatButton(interaction: ButtonInteraction) {
       modUserId,
       action: "reject",
       source: "discord",
+    });
+    await logAudit(interaction.client, {
+      modUserId,
+      action: "reject",
+      kind: "feat",
+      itemId: featId,
+      itemTitle: f.title,
     });
     await interaction.update({
       embeds: [
@@ -329,6 +396,13 @@ export async function onFeatButton(interaction: ButtonInteraction) {
       modUserId,
       action: "withdraw",
       source: "discord",
+    });
+    await logAudit(interaction.client, {
+      modUserId,
+      action: "withdraw",
+      kind: "feat",
+      itemId: featId,
+      itemTitle: f.title,
     });
 
     await interaction.update({
@@ -364,17 +438,22 @@ export async function onGuildMemberUpdate(_oldMember: GuildMember, newMember: Gu
 
 export function registerHandlers(client: Client) {
   client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isButton()) return;
-    const isSub = interaction.customId.startsWith("sub:");
-    const isFeat = interaction.customId.startsWith("feat:");
-    if (!isSub && !isFeat) return;
     try {
-      if (isSub) await onSubmissionButton(interaction);
-      if (isFeat) await onFeatButton(interaction);
+      if (interaction.isChatInputCommand()) {
+        await onChatInputCommand(interaction);
+        return;
+      }
+      if (interaction.isButton()) {
+        const id = interaction.customId;
+        if (id.startsWith("sub:"))         { await onSubmissionButton(interaction); return; }
+        if (id.startsWith("feat:"))        { await onFeatButton(interaction); return; }
+        if (id === "verify:start")         { await onVerifyStart(interaction); return; }
+        if (id.startsWith("verify:ans:"))  { await onVerifyAnswer(interaction); return; }
+      }
     } catch (err) {
       console.error("[bot] interaction failed:", err);
-      if (!interaction.replied) {
-        await interaction.reply({ content: "Something went wrong.", ephemeral: true });
+      if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: "Something went wrong.", ephemeral: true }).catch(() => {});
       }
     }
   });
@@ -387,7 +466,25 @@ export function registerHandlers(client: Client) {
     }
   });
 
-  client.on("ready", (c) => {
+  client.on("guildMemberAdd", async (member) => {
+    try {
+      await onGuildMemberAdd(member);
+    } catch (err) {
+      console.error("[bot] member add failed:", err);
+    }
+  });
+
+  client.on("messageReactionAdd", async (reaction, user) => {
+    try {
+      await onMessageReactionAdd(reaction, user);
+    } catch (err) {
+      console.error("[bot] reaction add failed:", err);
+    }
+  });
+
+  client.once("ready", async (c) => {
     console.log(`[bot] logged in as ${c.user.tag}`);
+    await registerSlashCommands(c);
+    startScheduler(c);
   });
 }

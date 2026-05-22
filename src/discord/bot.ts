@@ -20,14 +20,32 @@ async function main() {
       GatewayIntentBits.GuildMembers,
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildPresences,
+      GatewayIntentBits.GuildMessageReactions,
     ],
-    partials: [Partials.Channel, Partials.GuildMember],
+    partials: [Partials.Channel, Partials.GuildMember, Partials.Message, Partials.Reaction],
   });
 
   registerHandlers(client);
 
-  process.on("SIGINT", () => client.destroy());
-  process.on("SIGTERM", () => client.destroy());
+  // Clean shutdown. The scheduler's setInterval/setTimeout keep the event
+  // loop alive indefinitely, so client.destroy() alone won't end the
+  // process — we must explicitly exit. The unref'd timer is a hard ceiling
+  // in case client.destroy() itself hangs.
+  let shuttingDown = false;
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[bot] ${signal} received — shutting down`);
+    setTimeout(() => process.exit(0), 5000).unref();
+    try {
+      await client.destroy();
+    } catch (err) {
+      console.error("[bot] destroy failed:", err);
+    }
+    process.exit(0);
+  };
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
   await client.login(token);
 }
