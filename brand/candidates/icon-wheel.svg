@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Concept 4: THE PRIZE WHEEL — the cursed 8-wedge wheel from the
+       homepage. Pure geometry, circle-native by definition. -->
+  <defs>
+    <radialGradient id="wh-bg" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#150b09"/>
+      <stop offset="62%" stop-color="#070303"/>
+      <stop offset="100%" stop-color="#020202"/>
+    </radialGradient>
+    <radialGradient id="wh-bloom" cx="50%" cy="50%" r="52%">
+      <stop offset="0%" stop-color="#cc0000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#cc0000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#wh-bg)"/>
+  <circle cx="256" cy="256" r="196" fill="url(#wh-bloom)"/>
+
+  <!-- gauge ring -->
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#000000" stroke-width="12"/>
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#4a0000" stroke-width="4"/>
+
+  <!-- the 8 wedges -->
+  <g stroke="#000000" stroke-width="2">
+    <path d="M256 256 L256 68 A188 188 0 0 1 388.9 123.1 Z" fill="#ff2222"/>
+    <path d="M256 256 L388.9 123.1 A188 188 0 0 1 444 256 Z" fill="#1a0606"/>
+    <path d="M256 256 L444 256 A188 188 0 0 1 388.9 388.9 Z" fill="#cc0000"/>
+    <path d="M256 256 L388.9 388.9 A188 188 0 0 1 256 444 Z" fill="#1a0606"/>
+    <path d="M256 256 L256 444 A188 188 0 0 1 123.1 388.9 Z" fill="#ff2222"/>
+    <path d="M256 256 L123.1 388.9 A188 188 0 0 1 68 256 Z" fill="#1a0606"/>
+    <path d="M256 256 L68 256 A188 188 0 0 1 123.1 123.1 Z" fill="#cc0000"/>
+    <path d="M256 256 L123.1 123.1 A188 188 0 0 1 256 68 Z" fill="#1a0606"/>
+  </g>
+
+  <!-- wheel rim -->
+  <circle cx="256" cy="256" r="188" fill="none" stroke="#000000" stroke-width="7"/>
+  <circle cx="256" cy="256" r="188" fill="none" stroke="#cc0000" stroke-width="2"/>
+
+  <!-- cursed iris hub -->
+  <circle cx="256" cy="256" r="50" fill="#0c0606" stroke="#000000" stroke-width="5"/>
+  <circle cx="256" cy="256" r="34" fill="#cc0000"/>
+  <circle cx="262" cy="250" r="17" fill="#1a0000"/>
+  <circle cx="250" cy="244" r="6" fill="#ff6a6a" opacity="0.8"/>
+
+  <!-- pointer, biting in from the top -->
+  <path d="M 256 104 L 226 44 L 286 44 Z" fill="#ff2222" stroke="#000000" stroke-width="5"/>
+</svg>

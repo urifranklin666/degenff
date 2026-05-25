@@ -1,125 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- DegenBot avatar — the keyhole, in the machine's cyan colorway.
+       Same shape as the server icon (brand consistency), different hue
+       so the bot is instantly tellable-apart at 32px. -->
   <defs>
-    <radialGradient id="iris" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"  stop-color="#ff2e7c"/>
-      <stop offset="55%" stop-color="#cc0000"/>
-      <stop offset="100%" stop-color="#1a0000"/>
+    <radialGradient id="ba-bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#06140f"/>
+      <stop offset="58%" stop-color="#040908"/>
+      <stop offset="100%" stop-color="#020202"/>
     </radialGradient>
+    <radialGradient id="ba-bloom" cx="50%" cy="45%" r="46%">
+      <stop offset="0%" stop-color="#00f5d4" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00f5d4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ba-key" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7dffef"/>
+      <stop offset="50%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#009d88"/>
+    </linearGradient>
   </defs>
 
-  <!-- background -->
-  <rect width="512" height="512" fill="#040404"/>
+  <rect width="512" height="512" fill="url(#ba-bg)"/>
+  <circle cx="256" cy="248" r="198" fill="url(#ba-bloom)"/>
 
-  <!-- subtle grid -->
-  <g stroke="rgba(204,0,0,0.05)" stroke-width="1">
-    <line x1="0" y1="128" x2="512" y2="128"/>
-    <line x1="0" y1="256" x2="512" y2="256"/>
-    <line x1="0" y1="384" x2="512" y2="384"/>
-    <line x1="128" y1="0" x2="128" y2="512"/>
-    <line x1="256" y1="0" x2="256" y2="512"/>
-    <line x1="384" y1="0" x2="384" y2="512"/>
-  </g>
+  <!-- gauge ring + tick band, cyan -->
+  <circle cx="256" cy="256" r="226" fill="none" stroke="#000000" stroke-width="12"/>
+  <circle cx="256" cy="256" r="226" fill="none" stroke="#06443c" stroke-width="4"/>
+  <circle cx="256" cy="256" r="208" fill="none" stroke="#00f5d4" stroke-width="15"
+          stroke-dasharray="3 18.5" stroke-linecap="butt"/>
 
-  <!-- glow plate -->
-  <circle cx="256" cy="256" r="230" fill="#1a0000"/>
-
-  <!-- outer black frame -->
-  <rect x="68" y="68" width="376" height="376" fill="none" stroke="#000" stroke-width="10"/>
-
-  <!-- vesica-piscis eye, centered horizontally, slightly raised -->
-  <!-- white sclera with thick black outline -->
-  <path d="M 88 256 Q 256 60 424 256 Q 256 452 88 256 Z"
-        fill="#f5efe1" stroke="#000" stroke-width="14"/>
-
-  <!-- iris -->
-  <circle cx="256" cy="256" r="92" fill="url(#iris)" stroke="#000" stroke-width="6"/>
-
-  <!-- vertical slit pupil (animal-y) -->
-  <ellipse cx="256" cy="256" rx="10" ry="60" fill="#000"/>
-
-  <!-- catchlight highlight -->
-  <circle cx="284" cy="232" r="14" fill="#fff" opacity="0.78"/>
-  <circle cx="290" cy="226" r="5"  fill="#fff"/>
-
-  <!-- corner badge: BOT in mono -->
+  <!-- keyhole -->
   <g>
-    <rect x="56" y="56" width="80" height="34" fill="#ffd400" stroke="#000" stroke-width="4"/>
-    <text x="96" y="81" font-family="IBM Plex Mono" font-weight="700" font-size="22"
-          text-anchor="middle" fill="#000" letter-spacing="3">BOT</text>
+    <circle cx="256" cy="216" r="67" fill="#04211d"/>
+    <path d="M 231 200 L 201 362 L 311 362 L 281 200 Z" fill="#04211d"/>
+    <circle cx="256" cy="216" r="60" fill="url(#ba-key)"/>
+    <path d="M 237 204 L 211 354 L 301 354 L 275 204 Z" fill="url(#ba-key)"/>
+    <ellipse cx="238" cy="198" rx="18" ry="14" fill="#d2fff8" opacity="0.55"/>
   </g>
 
-  <!-- bottom-right: pinprick red bulbs (3) -->
-  <g fill="#ff2222">
-    <circle cx="386" cy="446" r="5"/>
-    <circle cx="408" cy="446" r="5"/>
-    <circle cx="430" cy="446" r="5"/>
-  </g>
-
-  <!-- scanlines overlay (lighter than server icon, since bot is "alive") -->
-  <g opacity="0.13" fill="#000">
-    <rect x="0" y="0"   width="512" height="2"/>
-    <rect x="0" y="8"   width="512" height="2"/>
-    <rect x="0" y="16"  width="512" height="2"/>
-    <rect x="0" y="24"  width="512" height="2"/>
-    <rect x="0" y="32"  width="512" height="2"/>
-    <rect x="0" y="40"  width="512" height="2"/>
-    <rect x="0" y="48"  width="512" height="2"/>
-    <rect x="0" y="56"  width="512" height="2"/>
-    <rect x="0" y="64"  width="512" height="2"/>
-    <rect x="0" y="72"  width="512" height="2"/>
-    <rect x="0" y="80"  width="512" height="2"/>
-    <rect x="0" y="88"  width="512" height="2"/>
-    <rect x="0" y="96"  width="512" height="2"/>
-    <rect x="0" y="104" width="512" height="2"/>
-    <rect x="0" y="112" width="512" height="2"/>
-    <rect x="0" y="120" width="512" height="2"/>
-    <rect x="0" y="128" width="512" height="2"/>
-    <rect x="0" y="136" width="512" height="2"/>
-    <rect x="0" y="144" width="512" height="2"/>
-    <rect x="0" y="152" width="512" height="2"/>
-    <rect x="0" y="160" width="512" height="2"/>
-    <rect x="0" y="168" width="512" height="2"/>
-    <rect x="0" y="176" width="512" height="2"/>
-    <rect x="0" y="184" width="512" height="2"/>
-    <rect x="0" y="192" width="512" height="2"/>
-    <rect x="0" y="200" width="512" height="2"/>
-    <rect x="0" y="208" width="512" height="2"/>
-    <rect x="0" y="216" width="512" height="2"/>
-    <rect x="0" y="224" width="512" height="2"/>
-    <rect x="0" y="232" width="512" height="2"/>
-    <rect x="0" y="240" width="512" height="2"/>
-    <rect x="0" y="248" width="512" height="2"/>
-    <rect x="0" y="256" width="512" height="2"/>
-    <rect x="0" y="264" width="512" height="2"/>
-    <rect x="0" y="272" width="512" height="2"/>
-    <rect x="0" y="280" width="512" height="2"/>
-    <rect x="0" y="288" width="512" height="2"/>
-    <rect x="0" y="296" width="512" height="2"/>
-    <rect x="0" y="304" width="512" height="2"/>
-    <rect x="0" y="312" width="512" height="2"/>
-    <rect x="0" y="320" width="512" height="2"/>
-    <rect x="0" y="328" width="512" height="2"/>
-    <rect x="0" y="336" width="512" height="2"/>
-    <rect x="0" y="344" width="512" height="2"/>
-    <rect x="0" y="352" width="512" height="2"/>
-    <rect x="0" y="360" width="512" height="2"/>
-    <rect x="0" y="368" width="512" height="2"/>
-    <rect x="0" y="376" width="512" height="2"/>
-    <rect x="0" y="384" width="512" height="2"/>
-    <rect x="0" y="392" width="512" height="2"/>
-    <rect x="0" y="400" width="512" height="2"/>
-    <rect x="0" y="408" width="512" height="2"/>
-    <rect x="0" y="416" width="512" height="2"/>
-    <rect x="0" y="424" width="512" height="2"/>
-    <rect x="0" y="432" width="512" height="2"/>
-    <rect x="0" y="440" width="512" height="2"/>
-    <rect x="0" y="448" width="512" height="2"/>
-    <rect x="0" y="456" width="512" height="2"/>
-    <rect x="0" y="464" width="512" height="2"/>
-    <rect x="0" y="472" width="512" height="2"/>
-    <rect x="0" y="480" width="512" height="2"/>
-    <rect x="0" y="488" width="512" height="2"/>
-    <rect x="0" y="496" width="512" height="2"/>
-    <rect x="0" y="504" width="512" height="2"/>
-  </g>
+  <!-- registration diamond stays oxblood — the family tie to the server icon -->
+  <path d="M 256 408 l 12 12 l -12 12 l -12 -12 Z" fill="#cc0000"/>
 </svg>

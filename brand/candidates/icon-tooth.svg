@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Concept 3: THE TOOTH — the site rains teeth (TeethRain ambient
+       layer). One bold tooth, one red drip. -->
+  <defs>
+    <radialGradient id="th-bg" cx="50%" cy="38%" r="82%">
+      <stop offset="0%" stop-color="#150b09"/>
+      <stop offset="60%" stop-color="#070303"/>
+      <stop offset="100%" stop-color="#020202"/>
+    </radialGradient>
+    <radialGradient id="th-floor" cx="50%" cy="88%" r="44%">
+      <stop offset="0%" stop-color="#cc0000" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#cc0000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="th-enamel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#e7e0cd"/>
+      <stop offset="100%" stop-color="#9c9380"/>
+    </linearGradient>
+    <linearGradient id="th-drip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff2a2a"/>
+      <stop offset="100%" stop-color="#7c0000"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#th-bg)"/>
+  <circle cx="256" cy="432" r="188" fill="url(#th-floor)"/>
+
+  <!-- gauge ring to match the set -->
+  <circle cx="256" cy="256" r="226" fill="none" stroke="#000000" stroke-width="12"/>
+  <circle cx="256" cy="256" r="226" fill="none" stroke="#4a0000" stroke-width="4"/>
+  <circle cx="256" cy="256" r="208" fill="none" stroke="#cc0000" stroke-width="13"
+          stroke-dasharray="3 20" stroke-linecap="butt"/>
+
+  <g transform="rotate(-3 256 256)">
+    <!-- drop shadow -->
+    <path d="M 180 182 Q 256 146 332 182 L 344 286 L 314 388 L 256 308 L 198 388 L 168 286 Z"
+          fill="#000000" opacity="0.5" transform="translate(8 10)"/>
+    <!-- enamel -->
+    <path d="M 180 182 Q 256 146 332 182 L 344 286 L 314 388 L 256 308 L 198 388 L 168 286 Z"
+          fill="url(#th-enamel)" stroke="#0c0606" stroke-width="3.5"/>
+    <!-- soft top-left sheen -->
+    <ellipse cx="222" cy="206" rx="34" ry="44" fill="#ffffff" opacity="0.32"/>
+  </g>
+
+  <!-- the drip, hanging off the left root tip -->
+  <g transform="rotate(-3 256 256)">
+    <path d="M 188 380 Q 180 416 200 446 Q 220 416 212 380 Z" fill="url(#th-drip)"/>
+    <ellipse cx="195" cy="408" rx="6" ry="10" fill="#ff6464" opacity="0.65"/>
+  </g>
+</svg>

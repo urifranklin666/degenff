@@ -1,12 +1,36 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitWork, type SubmitState } from "@/app/actions/submit";
+import { takeImage } from "@/lib/degenerate/handoff";
 
 const INITIAL: SubmitState = { ok: false };
 
 export default function SubmitForm() {
   const [state, formAction, pending] = useActionState(submitWork, INITIAL);
+  const filesRef = useRef<HTMLInputElement>(null);
+  const [fromDegenerate, setFromDegenerate] = useState<string | null>(null);
+
+  // An image exported from /degenerate rides through IndexedDB. Consume it once
+  // and pre-load it into the file input so the artist can submit it directly.
+  useEffect(() => {
+    let live = true;
+    takeImage()
+      .then((payload) => {
+        if (!live || !payload || !filesRef.current) return;
+        const file = new File([payload.blob], payload.filename, { type: payload.mime });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        filesRef.current.files = dt.files;
+        setFromDegenerate(payload.filename);
+      })
+      .catch(() => {
+        /* nothing waiting — normal */
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   return (
     <form action={formAction} className="submit-form">
@@ -28,9 +52,15 @@ export default function SubmitForm() {
         <input id="title" name="title" required maxLength={200} placeholder="What you made (one line)" />
       </div>
 
+      {fromDegenerate && (
+        <p className="form-notice" role="status">
+          <strong>◈ From DeGENERATE</strong> {fromDegenerate} is loaded into Files below — ready to drop in the queue.
+        </p>
+      )}
+
       <div className="field">
         <label htmlFor="files">Files</label>
-        <input id="files" name="files" type="file" multiple accept="image/*,audio/*,video/*" />
+        <input ref={filesRef} id="files" name="files" type="file" multiple accept="image/*,audio/*,video/*" />
         <small>
           24MB images · 48MB audio · 60MB video. EXIF gets stripped. GIF, JPEG, PNG, WebP,
           AVIF, MP3, WAV, OGG, FLAC, MP4, WebM, MOV.

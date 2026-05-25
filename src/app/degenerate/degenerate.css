@@ -1,0 +1,1034 @@
+/* ════════════════════════════════════════════════════════════════════════
+   DeGENERATE — route-scoped stylesheet. Tactical-telemetry console: dark
+   substrate, monospace bones, razor 1px compartments, zero border-radius.
+   Inherits the site palette tokens from globals.css (:root).
+   ════════════════════════════════════════════════════════════════════════ */
+
+.dg-root {
+  --dg-panel: #0c0b0a;
+  --dg-panel-2: #131110;
+  --dg-line: #241a18;
+  --dg-line-hot: var(--red-deeper);
+  --dg-ink: var(--text);
+  --dg-ink-dim: var(--text-dim-aa);
+  --dg-mono: var(--mono);
+
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.75rem) var(--gutter) 4rem;
+}
+
+/* ─── masthead ──────────────────────────────────────────────────────────── */
+.dg-masthead {
+  border: 1px solid var(--border-strong);
+  border-bottom: none;
+  background: var(--dg-panel);
+  padding: clamp(1.1rem, 3vw, 2.2rem) clamp(1.1rem, 3vw, 2.4rem);
+  position: relative;
+  overflow: hidden;
+}
+.dg-masthead::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, var(--red-deeper) 0 1px, transparent 1px 13px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.dg-masthead-eyebrow {
+  position: relative;
+  display: block;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red-bright);
+}
+.dg-masthead-title {
+  position: relative;
+  margin: 0.35rem 0 0.55rem;
+  font-family: var(--slam);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.86;
+  font-size: clamp(2.8rem, 9vw, 6.4rem);
+  color: var(--text-bright);
+}
+.dg-masthead-title span {
+  color: var(--red);
+  -webkit-text-stroke: 1px var(--red-bright);
+}
+.dg-masthead-blurb {
+  position: relative;
+  max-width: 64ch;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: var(--type-0);
+  line-height: 1.5;
+  color: var(--text-mid);
+}
+
+/* ─── shell ─────────────────────────────────────────────────────────────── */
+.dg-shell {
+  display: flex;
+  flex-direction: column;
+  height: min(83vh, 960px);
+  min-height: 620px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  box-shadow: 0 0 0 1px #000, 10px 10px 0 -1px rgba(0, 0, 0, 0.7);
+}
+.dg-shell-boot {
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.dg-boot-glyph {
+  font-size: 2.4rem;
+  color: var(--red);
+  animation: dgPulse 1.4s steps(2) infinite;
+}
+@keyframes dgPulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ─── command bar ───────────────────────────────────────────────────────── */
+.dg-cmd {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  height: 54px;
+  flex: 0 0 auto;
+  background: var(--dg-line);
+  border-bottom: 1px solid var(--border-strong);
+}
+.dg-cmd > * {
+  background: var(--dg-panel);
+}
+.dg-cmd-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0 1.1rem;
+}
+.dg-cmd-glyph {
+  color: var(--red);
+  font-size: 1.15rem;
+}
+.dg-cmd-name {
+  font-family: var(--slam);
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+}
+.dg-cmd-name em {
+  font-style: normal;
+  color: var(--red);
+}
+.dg-cmd-sep {
+  width: 1px;
+  background: var(--dg-panel);
+}
+.dg-cmd-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 0.5rem;
+}
+.dg-zoom {
+  gap: 1px;
+}
+.dg-zoom-readout {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.08em;
+  color: var(--text);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  padding: 0.35rem 0.5rem;
+  min-width: 56px;
+  text-align: center;
+}
+.dg-zoom-readout:hover:not(:disabled) {
+  color: var(--red-bright);
+}
+.dg-cmd-file {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 1rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── buttons ───────────────────────────────────────────────────────────── */
+.dg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  align-self: center;
+  margin: 0 0.4rem;
+  padding: 0.5rem 0.95rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--border-strong);
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.dg-btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text-bright);
+  border-color: var(--red-dim);
+}
+.dg-btn-primary {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red-bright);
+}
+.dg-btn-primary:hover:not(:disabled) {
+  background: var(--red-bright);
+  color: #fff;
+}
+.dg-btn-ghost {
+  background: transparent;
+}
+.dg-btn-wide {
+  width: 100%;
+  margin: 0 0 0.65rem;
+  padding: 0.6rem;
+}
+.dg-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dg-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  align-self: center;
+  font-size: 1rem;
+  color: var(--text-mid);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.dg-icon-btn:hover:not(:disabled) {
+  color: var(--red-bright);
+  border-color: var(--red-dim);
+}
+.dg-icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ─── body grid ─────────────────────────────────────────────────────────── */
+.dg-body {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 252px 1fr 326px;
+  gap: 1px;
+  background: var(--dg-line);
+  min-height: 0;
+}
+
+.dg-rail {
+  background: var(--dg-panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.dg-layers {
+  padding: 0.9rem;
+}
+
+/* ─── panel headers ─────────────────────────────────────────────────────── */
+.dg-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+.dg-panel-head h2 {
+  margin: 0;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+}
+.dg-count {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.1em;
+  color: var(--red-bright);
+}
+
+/* ─── layers list ───────────────────────────────────────────────────────── */
+.dg-layer-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.dg-empty {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  color: var(--text-dim-aa);
+  padding: 0.5rem 0;
+  margin: 0;
+}
+.dg-layer-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.55rem;
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  cursor: pointer;
+  transition: border-color var(--t-fast);
+}
+.dg-layer-row:hover {
+  border-color: var(--border-strong);
+}
+.dg-layer-row.is-sel {
+  border-color: var(--red);
+  background: var(--red-soft);
+}
+.dg-layer-row.is-hidden {
+  opacity: 0.45;
+}
+.dg-layer-eye {
+  color: var(--red-bright);
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.dg-layer-row.is-hidden .dg-layer-eye {
+  color: var(--text-dim-aa);
+}
+.dg-layer-meta {
+  min-width: 0;
+}
+.dg-layer-name {
+  display: block;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dg-layer-text {
+  display: block;
+  font-family: var(--dg-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim-aa);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dg-layer-acts {
+  display: flex;
+  gap: 1px;
+}
+.dg-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  font-size: 0.6rem;
+  color: var(--text-dim-aa);
+  background: var(--dg-panel);
+  border: 1px solid var(--dg-line);
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.dg-mini:hover:not(:disabled) {
+  color: var(--text-bright);
+  border-color: var(--red-dim);
+}
+.dg-mini.is-on {
+  color: var(--hazard);
+  border-color: var(--red-dim);
+}
+.dg-mini-danger:hover:not(:disabled) {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red-bright);
+}
+.dg-mini:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* ─── stage ─────────────────────────────────────────────────────────────── */
+.dg-stage {
+  position: relative;
+  overflow: auto;
+  background: var(--bg);
+  background-image:
+    linear-gradient(45deg, #0a0908 25%, transparent 25%, transparent 75%, #0a0908 75%),
+    linear-gradient(45deg, #0a0908 25%, transparent 25%, transparent 75%, #0a0908 75%);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
+}
+.dg-stage.is-drop {
+  outline: 2px dashed var(--red-bright);
+  outline-offset: -8px;
+}
+.dg-canvas-mount {
+  display: grid;
+  place-items: center;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 48px;
+  box-sizing: border-box;
+}
+.dg-canvas {
+  display: block;
+  box-shadow: 0 0 0 1px #000, 0 24px 60px rgba(0, 0, 0, 0.85);
+  outline: 1px solid var(--border-strong);
+}
+.dg-stage-boot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+  background: var(--bg);
+}
+
+/* ─── dropzone ──────────────────────────────────────────────────────────── */
+.dg-dropzone {
+  position: absolute;
+  inset: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: var(--dg-panel);
+  border: 1px dashed var(--border-strong);
+  transition: border-color var(--t-mid), background var(--t-mid);
+}
+.dg-dropzone:hover {
+  border-color: var(--red);
+  background: var(--surface);
+}
+.dg-dropzone-glyph {
+  font-size: 3.4rem;
+  color: var(--red);
+}
+.dg-dropzone-title {
+  font-family: var(--slam);
+  font-size: clamp(1.4rem, 3vw, 2.3rem);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-bright);
+}
+.dg-dropzone-sub {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+}
+
+/* ─── inspector ─────────────────────────────────────────────────────────── */
+.dg-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  flex: 0 0 auto;
+  background: var(--dg-line);
+  border-bottom: 1px solid var(--border-strong);
+}
+.dg-tabs button {
+  padding: 0.7rem 0.5rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+  background: var(--dg-panel);
+  border: none;
+  border-top: 2px solid transparent;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.dg-tabs button:hover {
+  color: var(--text);
+}
+.dg-tabs button.is-on {
+  color: var(--text-bright);
+  background: var(--dg-panel-2);
+  border-top-color: var(--red);
+}
+.dg-inspector-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+.dg-panel,
+.dg-panel-empty {
+  padding: 1rem;
+}
+.dg-panel-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.dg-section {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--dg-line);
+}
+.dg-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+.dg-section h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.7rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red-bright);
+}
+.dg-section h3::before {
+  content: "▍";
+  color: var(--red);
+}
+
+/* ─── fields & controls ─────────────────────────────────────────────────── */
+.dg-field {
+  margin-bottom: 0.7rem;
+}
+.dg-field:last-child {
+  margin-bottom: 0;
+}
+.dg-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+.dg-field-label {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.dg-field-hint {
+  font-family: var(--dg-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim-aa);
+}
+.dg-val {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.04em;
+  color: var(--text-bright);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  padding: 0.05rem 0.35rem;
+  min-width: 46px;
+  text-align: right;
+}
+
+/* range */
+.dg-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: crosshair;
+}
+.dg-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--dg-line);
+  border: 1px solid var(--border-mid);
+}
+.dg-range::-moz-range-track {
+  height: 4px;
+  background: var(--dg-line);
+  border: 1px solid var(--border-mid);
+}
+.dg-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 16px;
+  margin-top: -7px;
+  background: var(--red);
+  border: 1px solid var(--red-bright);
+}
+.dg-range::-moz-range-thumb {
+  width: 12px;
+  height: 16px;
+  border-radius: 0;
+  background: var(--red);
+  border: 1px solid var(--red-bright);
+}
+.dg-range:hover::-webkit-slider-thumb {
+  background: var(--red-bright);
+}
+.dg-range:hover::-moz-range-thumb {
+  background: var(--red-bright);
+}
+
+/* text inputs */
+.dg-textarea,
+.dg-text-input,
+.dg-select {
+  width: 100%;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  padding: 0.5rem;
+  cursor: text;
+}
+.dg-textarea {
+  resize: vertical;
+  line-height: 1.5;
+  margin-bottom: 0.4rem;
+}
+.dg-select {
+  cursor: crosshair;
+  text-transform: uppercase;
+}
+.dg-textarea:focus,
+.dg-text-input:focus,
+.dg-select:focus,
+.dg-hex:focus {
+  outline: none;
+  border-color: var(--red);
+}
+
+/* color */
+.dg-color-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.dg-color-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.dg-color {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border-strong);
+  cursor: crosshair;
+}
+.dg-color::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+.dg-color::-webkit-color-swatch {
+  border: none;
+}
+.dg-color::-moz-color-swatch {
+  border: none;
+}
+.dg-hex {
+  width: 78px;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.05em;
+  color: var(--text);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  padding: 0.32rem 0.4rem;
+}
+
+/* segmented */
+.dg-seg {
+  display: flex;
+  gap: 1px;
+  background: var(--dg-line);
+  border: 1px solid var(--dg-line);
+}
+.dg-seg button {
+  flex: 1;
+  padding: 0.42rem 0.3rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+  background: var(--dg-panel-2);
+  border: none;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.dg-seg button:hover {
+  color: var(--text);
+}
+.dg-seg button.is-on {
+  color: #fff;
+  background: var(--red);
+}
+
+/* toggle */
+.dg-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.dg-toggle-track {
+  width: 32px;
+  height: 16px;
+  background: var(--dg-line);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  padding: 1px;
+}
+.dg-toggle-knob {
+  width: 11px;
+  height: 11px;
+  background: var(--text-dim-aa);
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast);
+}
+.dg-toggle.is-on .dg-toggle-track {
+  border-color: var(--red-bright);
+}
+.dg-toggle.is-on .dg-toggle-knob {
+  background: var(--red);
+  transform: translateX(16px);
+}
+.dg-toggle-label {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+/* ─── font grid ─────────────────────────────────────────────────────────── */
+.dg-font-cat {
+  margin-bottom: 0.7rem;
+}
+.dg-font-cat-label {
+  display: block;
+  font-family: var(--dg-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+  margin-bottom: 0.3rem;
+}
+.dg-font-grid {
+  display: flex;
+  flex-direction: column;
+}
+.dg-font-chip {
+  display: inline-block;
+  margin: 0 0.3rem 0.3rem 0;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  color: var(--text);
+  background: var(--dg-panel-2);
+  border: 1px solid var(--dg-line);
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.dg-font-chip:hover {
+  border-color: var(--red-dim);
+  color: var(--text-bright);
+}
+.dg-font-chip.is-on {
+  border-color: var(--red);
+  color: var(--red-bright);
+  background: var(--red-soft);
+}
+
+/* ─── grade presets ─────────────────────────────────────────────────────── */
+.dg-preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--dg-line);
+  border: 1px solid var(--dg-line);
+}
+.dg-preset {
+  padding: 0.5rem 0.4rem;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  background: var(--dg-panel-2);
+  border: none;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.dg-preset:hover {
+  color: #fff;
+  background: var(--red);
+}
+
+/* ─── effects ───────────────────────────────────────────────────────────── */
+.dg-fx-library {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--dg-line);
+  border: 1px solid var(--dg-line);
+}
+.dg-fx-add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem;
+  text-align: left;
+  background: var(--dg-panel-2);
+  border: none;
+  transition: background var(--t-fast);
+}
+.dg-fx-add:hover {
+  background: var(--surface-3);
+}
+.dg-fx-add-name {
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.dg-fx-add:hover .dg-fx-add-name {
+  color: var(--red-bright);
+}
+.dg-fx-add-cat {
+  font-family: var(--dg-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim-aa);
+}
+.dg-fx-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+.dg-fx-card {
+  border: 1px solid var(--dg-line);
+  background: var(--dg-panel-2);
+}
+.dg-fx-card.is-off {
+  opacity: 0.5;
+}
+.dg-fx-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid var(--dg-line);
+}
+.dg-fx-card-acts {
+  display: flex;
+  gap: 1px;
+}
+.dg-fx-card-params {
+  padding: 0.6rem 0.55rem;
+}
+.dg-fx-noparam {
+  margin: 0;
+  padding: 0.55rem;
+  font-family: var(--dg-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim-aa);
+}
+
+/* ─── status bar ────────────────────────────────────────────────────────── */
+.dg-status {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 28px;
+  flex: 0 0 auto;
+  background: var(--dg-line);
+  border-top: 1px solid var(--border-strong);
+  font-family: var(--dg-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dg-status > span {
+  background: var(--dg-panel);
+  padding: 0 0.7rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.dg-status-msg {
+  flex: 1 1 auto;
+  color: var(--red-bright);
+}
+.dg-status-tag {
+  color: var(--text-dim-aa);
+}
+.dg-status-sel {
+  color: var(--text);
+}
+
+/* ─── export modal ──────────────────────────────────────────────────────── */
+.dg-modal-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 3, 3, 0.86);
+  padding: var(--gutter);
+}
+.dg-modal {
+  width: min(420px, 100%);
+  background: var(--dg-panel);
+  border: 1px solid var(--red-dim);
+  box-shadow: 0 0 0 1px #000, 14px 14px 0 -2px rgba(0, 0, 0, 0.8);
+}
+.dg-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--border-strong);
+}
+.dg-modal-head h2 {
+  margin: 0;
+  font-family: var(--slam);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-bright);
+}
+.dg-modal-body {
+  padding: 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.dg-export-dims {
+  margin: 0;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.dg-export-dims strong {
+  color: var(--text-bright);
+}
+.dg-export-error {
+  margin: 0;
+  font-family: var(--dg-mono);
+  font-size: var(--type-mini);
+  color: var(--red-bright);
+  border: 1px solid var(--red-dim);
+  background: var(--red-soft);
+  padding: 0.5rem;
+}
+.dg-modal-foot {
+  display: flex;
+  gap: 1px;
+  padding: 0.8rem 0.9rem;
+  border-top: 1px solid var(--border-strong);
+}
+.dg-modal-foot .dg-btn {
+  flex: 1;
+  margin: 0;
+}
+
+/* ─── responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .dg-body {
+    grid-template-columns: 210px 1fr 280px;
+  }
+}
+@media (max-width: 860px) {
+  .dg-shell {
+    height: auto;
+    min-height: 0;
+  }
+  .dg-body {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+  .dg-stage {
+    height: 56vh;
+  }
+  .dg-rail {
+    max-height: 380px;
+  }
+  .dg-cmd {
+    flex-wrap: wrap;
+    height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dg-boot-glyph {
+    animation: none;
+  }
+}

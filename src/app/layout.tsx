@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Playfair_Display, IBM_Plex_Mono } from "next/font/google";
+import { Anton, Playfair_Display, IBM_Plex_Mono, Big_Shoulders } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import TeethRain from "@/components/TeethRain";
 import Heartbeat from "@/components/Heartbeat";
+import ClassificationBanner from "@/components/ClassificationBanner";
+import ScrollGlitch from "@/components/ScrollGlitch";
 
 // Anton — ultra-condensed brutal sans for slam headlines
 const anton = Anton({
@@ -28,6 +30,13 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-plex-mono",
+  display: "swap",
+});
+
+// Big Shoulders Display — variable wght 100-900, kinetic display companion to Anton
+const shoulders = Big_Shoulders({
+  subsets: ["latin"],
+  variable: "--font-shoulders",
   display: "swap",
 });
 
@@ -68,7 +77,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${anton.variable} ${playfair.variable} ${plexMono.variable}`}
+      className={`${anton.variable} ${playfair.variable} ${plexMono.variable} ${shoulders.variable}`}
     >
       <body>
         <div className="bloom" aria-hidden />
@@ -76,12 +85,15 @@ export default function RootLayout({
         <div className="grime" aria-hidden />
         <TeethRain count={22} />
         <div className="scanlines" aria-hidden />
+        <div className="border-pulse" aria-hidden />
         <div className="page">
+          <ClassificationBanner />
           <Nav />
           <main>{children}</main>
           <Footer />
         </div>
         <Heartbeat />
+        <ScrollGlitch />
       </body>
     </html>
   );
