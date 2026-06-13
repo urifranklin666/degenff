@@ -9,6 +9,8 @@ import Scratch from "@/components/Scratch";
 import RevealOnView from "@/components/RevealOnView";
 import KineticType from "@/components/KineticType";
 import DiscordTicker from "@/components/DiscordTicker";
+import OracleDrop from "@/components/OracleDrop";
+import { getSiteStats, padCount } from "@/lib/stats";
 
 const TOP_MARQUEE = [
   "ROOM IS OCCUPIED",
@@ -35,7 +37,8 @@ const BOTTOM_MARQUEE = [
   "STILL LIT",
 ];
 
-export default function CultHome() {
+export default async function CultHome() {
+  const stats = await getSiteStats();
   return (
     <>
       <BulbMarquee items={TOP_MARQUEE} pattern={["b", "a", "d", "c"]} />
@@ -73,8 +76,9 @@ export default function CultHome() {
             </p>
 
             <div className="hero-meta">
-              <span><b>00+</b> submissions live</span>
-              <span><b>00</b> feats catalogued</span>
+              <span><b>{stats ? padCount(stats.submissions) : "00+"}</b> submissions live</span>
+              <span><b>{stats ? padCount(stats.feats) : "00"}</b> feats catalogued</span>
+              <span><b>{stats ? padCount(stats.contributors) : "00"}</b> weirdos on record</span>
               <span><b>∞</b> appetite for the weird</span>
               <span><b>$0</b> in SaaS bills</span>
               <span><b>1</b> Dell R630</span>
@@ -209,6 +213,12 @@ export default function CultHome() {
               </p>
             </div>
           </RevealOnView>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: "0", paddingBottom: "2rem", borderBottom: "none" }}>
+        <div className="container">
+          <OracleDrop />
         </div>
       </section>
 
