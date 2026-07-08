@@ -57,11 +57,21 @@ export default async function DiscordPage() {
     <>
       <section className="hero" style={{ minHeight: "auto", padding: "clamp(3rem, 7vw, 5rem) 0 0" }}>
         <div className="container" style={{ position: "relative" }}>
-          <span className="eyebrow">Doors Open</span>
+          <span className="eyebrow">Doors Were Open</span>
           <div className="slam-stack">
             <span className="line slam">You Have Been</span>
             <span className="line menace"><em>welcomed inside.</em></span>
             <span className="line blip">★ now keep your hands where we can see them ★</span>
+          </div>
+
+          <div className="tile" style={{ minHeight: 0, marginTop: "1.75rem", maxWidth: "62ch" }} data-stamp="DEAD">
+            <span className="tile-glyph" aria-hidden>†</span>
+            <h3 className="tile-title">This room is dead.</h3>
+            <p className="tile-body">
+              Discord flatlined and took the chat, the bot, and the voice with it. The death
+              notice — and the plan for rooms we actually own — is posted at{" "}
+              <Link href="/dead">/dead</Link>. This page stays up as a museum exhibit.
+            </p>
           </div>
           <p className="lede" style={{ marginTop: "1.5rem", maxWidth: "60ch" }}>
             The community spine of degeneratefuckface.com. Site logins are Discord logins. Mod queue is in here.

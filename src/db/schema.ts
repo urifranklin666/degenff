@@ -221,6 +221,99 @@ export const discordActivity = pgTable(
   ],
 );
 
+/* ── barker channel memory ──────────────────────────────────────────
+ * Per-channel rolling gist for The Barker. Survives bot restarts.
+ * Refreshed on a counter (every ~25 new messages after a reply). */
+
+export const barkerMemory = pgTable("barker_memory", {
+  channelId: varchar("channel_id", { length: 32 }).primaryKey(),
+  gist: text("gist").notNull().default(""),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type BarkerMemory = typeof barkerMemory.$inferSelect;
+
+/* ── ouija board (multi-user collaborative typing) ─────────────────── */
+
+export const boardSessionStatus = pgEnum("board_session_status", ["live", "locked"]);
+
+export const boardSessions = pgTable(
+  "board_sessions",
+  {
+    id: text("id").primaryKey().$defaultFn(() => nanoid(21)),
+    text: varchar("text", { length: 200 }).notNull().default(""),
+    status: boardSessionStatus("status").notNull().default("live"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    postedMessageId: varchar("posted_message_id", { length: 32 }),
+  },
+  (t) => [
+    index("board_sessions_status_idx").on(t.status, t.startedAt),
+  ],
+);
+
+export const boardLetters = pgTable(
+  "board_letters",
+  {
+    id: text("id").primaryKey().$defaultFn(() => nanoid(21)),
+    sessionId: text("session_id").notNull().references(() => boardSessions.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    char: varchar("char", { length: 8 }).notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("board_letters_session_idx").on(t.sessionId, t.at),
+    index("board_letters_user_idx").on(t.userId),
+  ],
+);
+
+export type BoardSession = typeof boardSessions.$inferSelect;
+export type BoardLetter = typeof boardLetters.$inferSelect;
+
+/* ── the rooms (self-hosted chat — the platform that replaced the Discord) ── */
+
+export const rooms = pgTable(
+  "rooms",
+  {
+    id: text("id").primaryKey().$defaultFn(() => nanoid(14)),
+    slug: varchar("slug", { length: 48 }).notNull(),
+    name: varchar("name", { length: 64 }).notNull(),
+    topic: varchar("topic", { length: 200 }),
+    position: integer("position").notNull().default(0),
+    modOnly: boolean("mod_only").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("rooms_slug_unique").on(t.slug)],
+);
+
+export const roomMessages = pgTable(
+  "room_messages",
+  {
+    id: text("id").primaryKey().$defaultFn(() => nanoid(14)),
+    roomId: text("room_id").notNull().references(() => rooms.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    body: varchar("body", { length: 2000 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("room_messages_room_idx").on(t.roomId, t.createdAt),
+    index("room_messages_user_idx").on(t.userId),
+  ],
+);
+
+export const roomsRelations = relations(rooms, ({ many }) => ({
+  messages: many(roomMessages),
+}));
+
+export const roomMessagesRelations = relations(roomMessages, ({ one }) => ({
+  room: one(rooms, { fields: [roomMessages.roomId], references: [rooms.id] }),
+  author: one(users, { fields: [roomMessages.userId], references: [users.id] }),
+}));
+
+export type Room = typeof rooms.$inferSelect;
+export type RoomMessage = typeof roomMessages.$inferSelect;
+
 /* ── rate limiting ─────────────────────────────────────────────────── */
 
 export const rateLimit = pgTable(

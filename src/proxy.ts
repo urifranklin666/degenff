@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const url = req.nextUrl;
 
-  if (url.pathname.startsWith("/mod")) {
+  if (url.pathname.startsWith("/mod") || url.pathname.startsWith("/ops")) {
     if (!req.auth) {
       const signIn = new URL("/api/auth/signin", url);
       signIn.searchParams.set("callbackUrl", url.pathname + url.search);
@@ -23,10 +23,10 @@ export default auth((req) => {
     }
   }
 
-  // /submit: any signed-in user; unsigned visitors → signin
-  if (url.pathname === "/submit" && !req.auth) {
+  // /submit + /rooms: any signed-in user; unsigned visitors → signin
+  if ((url.pathname === "/submit" || url.pathname.startsWith("/rooms")) && !req.auth) {
     const signIn = new URL("/api/auth/signin", url);
-    signIn.searchParams.set("callbackUrl", "/submit");
+    signIn.searchParams.set("callbackUrl", url.pathname);
     return NextResponse.redirect(signIn);
   }
 

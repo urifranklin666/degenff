@@ -1,7 +1,10 @@
+import { recentDiscordTicks, type RecentTick } from "@/lib/discord-recent";
+
 /**
  * Horizontal ticker scrolling Discord activity across the page chrome.
- * TODO: wire to real data via `select() from discordActivity order by createdAt desc limit 24`
- * — for now uses dossier-flavored placeholder copy that matches the manifesto voice.
+ * Pulls from the discord_activity cache (the bot populates that table).
+ * Falls back to placeholder copy when the cache is empty, so the marquee
+ * never looks broken in a fresh install.
  */
 
 type Tick = { user: string; channel: string; text: string };
@@ -21,14 +24,30 @@ const PLACEHOLDER: Tick[] = [
   { user: "@hallway",     channel: "#chaos",     text: "everyone is fine. the goose is fine. the goose is always fine" },
 ];
 
-export default function DiscordTicker() {
-  // duplicate so the marquee loop has continuity
-  const items = [...PLACEHOLDER, ...PLACEHOLDER];
+function toTick(r: RecentTick): Tick {
+  // Trim messages so a long Discord post doesn't blow the marquee width.
+  const text = r.text.length > 140 ? r.text.slice(0, 137) + "…" : r.text;
+  return { user: r.user, channel: r.channel, text: text || (r.hasAttachments ? "[attachment]" : "·") };
+}
+
+export default async function DiscordTicker() {
+  let items: Tick[] = [];
+  try {
+    const real = await recentDiscordTicks(24);
+    items = real.filter((r) => r.text || r.hasAttachments).map(toTick);
+  } catch {
+    items = [];
+  }
+  // Fall back to placeholder if the cache is empty (or DB unreachable).
+  if (items.length < 4) items = PLACEHOLDER;
+  // Duplicate so the marquee loop has continuity.
+  const looped = [...items, ...items];
+
   return (
     <div className="ticker-strip" role="presentation" aria-label="Recent activity in the Discord">
       <span className="ticker-label">FROM THE DISCORD ◆ JUST NOW ◆</span>
       <div className="ticker-track">
-        {items.map((it, i) => (
+        {looped.map((it, i) => (
           <span className="ticker-item" key={i}>
             <span className="user">{it.user}</span>
             <span className="channel">{it.channel}</span>

@@ -7,6 +7,7 @@ import { db, schema } from "@/db";
 import { processUpload } from "@/lib/uploads";
 import { FeatSchema, parseTagsInput } from "@/lib/validation";
 import { renderMarkdown, slugify, isValidSlug } from "@/lib/markdown";
+import { consumeRateLimit, formatRetryAfter } from "@/lib/ratelimit";
 import { notifyNewFeat } from "@/discord/notify";
 
 const { feats } = schema;
@@ -18,6 +19,19 @@ const SLUG_DEDUP_LIMIT = 50;
 export async function submitFeat(_prev: FeatState, formData: FormData): Promise<FeatState> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "Not signed in." };
+
+  // Rate limit: 3 feats per user per 24h (long-form; less frequent)
+  const rl = await consumeRateLimit({
+    key: `feat:${session.user.id}`,
+    max: 3,
+    windowMs: 24 * 3600 * 1000,
+  });
+  if (!rl.ok) {
+    return {
+      ok: false,
+      error: `Daily feat cap hit. Come back in ${formatRetryAfter(rl.retryAfterSec)}.`,
+    };
+  }
 
   const parsed = FeatSchema.safeParse({
     title: formData.get("title"),

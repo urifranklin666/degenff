@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
-const { submissions, users } = schema;
+const { submissions, users, boardSessions, boardLetters } = schema;
 
 /**
  * REST-only Discord notification used by the web app (server actions).
@@ -126,6 +126,64 @@ export async function notifyNewFeat(featId: string) {
     },
   );
   if (!r.ok) throw new Error(`discord feat post ${r.status}`);
+}
+
+export async function notifyBoardLocked(sessionId: string) {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  const channelId =
+    process.env.DISCORD_BOARD_CHANNEL_ID || process.env.DISCORD_SHOWCASE_CHANNEL_ID;
+  if (!token || !channelId) return;
+
+  const sess = await db.query.boardSessions.findFirst({
+    where: eq(boardSessions.id, sessionId),
+  });
+  if (!sess) return;
+
+  const letterRows = await db
+    .select({ userId: boardLetters.userId, handle: users.handle })
+    .from(boardLetters)
+    .innerJoin(users, eq(boardLetters.userId, users.id))
+    .where(eq(boardLetters.sessionId, sessionId));
+
+  const seen = new Set<string>();
+  const cosigners: string[] = [];
+  for (const row of letterRows) {
+    if (seen.has(row.userId)) continue;
+    seen.add(row.userId);
+    cosigners.push(`@${row.handle}`);
+  }
+
+  const embed = {
+    title: "▒  The planchette stopped.",
+    url: `${SITE}/board`,
+    description: `> ${sess.text}`,
+    color: 0xcc0000,
+    fields: cosigners.length
+      ? [{ name: "fingers on it", value: cosigners.slice(0, 25).join(" · ") }]
+      : [],
+    footer: { text: `session ${sess.id} · ${new Date(sess.lockedAt ?? sess.startedAt).toISOString()}` },
+  };
+
+  const r = await fetch(
+    `https://discord.com/api/v10/channels/${channelId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ embeds: [embed] }),
+    },
+  );
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`discord board post ${r.status}: ${text.slice(0, 200)}`);
+  }
+  const message = (await r.json()) as { id: string };
+  await db
+    .update(boardSessions)
+    .set({ postedMessageId: message.id })
+    .where(eq(boardSessions.id, sessionId));
 }
 
 export async function notifyNewSubmission(submissionId: string) {

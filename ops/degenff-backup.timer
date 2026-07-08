@@ -1,0 +1,11 @@
+[Unit]
+Description=Run degenff backup daily at 04:00 UTC
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 UTC
+Persistent=true
+RandomizedDelaySec=15min
+Unit=degenff-backup.service
+
+[Install]
+WantedBy=timers.target

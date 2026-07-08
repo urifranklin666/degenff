@@ -3,10 +3,24 @@ import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   type Client,
+  type GuildMember,
 } from "discord.js";
 import { eq, desc, count, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { postVerifyMessage } from "./verify";
+import { GOOSE_LINES } from "@/lib/oracle";
+import {
+  enqueue,
+  startRadio,
+  skip as musicSkip,
+  stop as musicStop,
+  leave as musicLeave,
+  snapshot as musicSnapshot,
+  formatDuration,
+} from "./music";
+import { joinVoiceChat, leaveVoiceChat, say } from "./voicechat";
+
+export { GOOSE_LINES };
 
 const { submissions, feats, users, modActions } = schema;
 
@@ -23,28 +37,7 @@ async function isMod(discordId: string): Promise<{ ok: boolean; userId?: string 
   return { ok: true, userId: u.id };
 }
 
-export const GOOSE_LINES = [
-  "the goose has spoken",
-  "the goose did not have a name",
-  "the goose is fine. the goose is always fine.",
-  "the carpet smells different today",
-  "the door was locked from the inside",
-  "we have been expecting you",
-  "consent was implied at the door",
-  "we kept the receipts but lost the body",
-  "subject refuses counsel",
-  "shoes off · no attorney present",
-  "step right up · proceed voluntarily",
-  "the dental records did not match",
-  "every exit is also an entrance",
-  "no refunds were issued. none requested.",
-  "the pigeon is also fine. don't ask.",
-  "we are not running a daycare. we are running a haunted petting zoo.",
-  "do not feed the moderators",
-  "the lights came on by themselves",
-  "boring is a moderation reason",
-  "if it's weird, it's probably welcome",
-];
+// GOOSE_LINES moved to @/lib/oracle so the website + bot share one source.
 
 const REDACT_BLOCK = "█";
 
@@ -89,6 +82,40 @@ export const commandDefs = [
     .setName("setup-verify")
     .setDescription("post the verification gate in the configured channel. admin only. run once.")
     .setDefaultMemberPermissions(0),
+  new SlashCommandBuilder()
+    .setName("play")
+    .setDescription("queue a YouTube link or search term in your voice channel.")
+    .addStringOption((o) =>
+      o.setName("query").setDescription("YouTube URL or search").setRequired(true),
+    ),
+  new SlashCommandBuilder()
+    .setName("radio")
+    .setDescription("start the pirate radio — auto-shuffles approved audio submissions."),
+  new SlashCommandBuilder()
+    .setName("skip")
+    .setDescription("skip the current track."),
+  new SlashCommandBuilder()
+    .setName("stop")
+    .setDescription("clear the queue and leave the voice channel."),
+  new SlashCommandBuilder()
+    .setName("queue")
+    .setDescription("show what's queued."),
+  new SlashCommandBuilder()
+    .setName("np")
+    .setDescription("now playing."),
+  new SlashCommandBuilder()
+    .setName("voice")
+    .setDescription("the Barker joins your voice channel to listen and talk back.")
+    .addSubcommand((s) =>
+      s.setName("join").setDescription("join your voice channel and start listening."),
+    )
+    .addSubcommand((s) => s.setName("leave").setDescription("step out of voice chat.")),
+  new SlashCommandBuilder()
+    .setName("say")
+    .setDescription("make the Barker say something aloud (must already be in voice).")
+    .addStringOption((o) =>
+      o.setName("text").setDescription("what to say").setRequired(true),
+    ),
 ];
 
 export async function registerSlashCommands(client: Client) {
@@ -118,6 +145,183 @@ export async function onChatInputCommand(interaction: ChatInputCommandInteractio
   if (name === "modstats")    return handleModStats(interaction);
   if (name === "audit-trail") return handleAuditTrail(interaction);
   if (name === "setup-verify") return handleSetupVerify(interaction);
+  if (name === "play")        return handlePlay(interaction);
+  if (name === "radio")       return handleRadio(interaction);
+  if (name === "skip")        return handleSkip(interaction);
+  if (name === "stop")        return handleStop(interaction);
+  if (name === "queue")       return handleQueue(interaction);
+  if (name === "np")          return handleNowPlaying(interaction);
+  if (name === "voice")       return handleVoice(interaction);
+  if (name === "say")         return handleSay(interaction);
+}
+
+/* ── music handlers ─────────────────────────────────────────────────── */
+
+function requireVoiceMember(interaction: ChatInputCommandInteraction): GuildMember | null {
+  const member = interaction.member as GuildMember | null;
+  if (!member || !("voice" in member)) return null;
+  return member;
+}
+
+async function handlePlay(interaction: ChatInputCommandInteraction) {
+  const member = requireVoiceMember(interaction);
+  if (!member?.voice.channel) {
+    return interaction.reply({ content: "join a voice channel first.", ephemeral: true });
+  }
+  const query = interaction.options.getString("query", true);
+  await interaction.deferReply();
+  try {
+    const { track, position } = await enqueue(
+      member,
+      query,
+      `${interaction.user.username}`,
+    );
+    const isFirst = position <= 1;
+    const embed = new EmbedBuilder()
+      .setColor(0xcc0000)
+      .setTitle(isFirst ? "◍  now broadcasting" : `↗  queued · #${position}`)
+      .setDescription(`**${track.title}**`)
+      .setFooter({ text: `requested by @${track.requestedBy} · ${formatDuration(track.durationSec)}` });
+    await interaction.editReply({ embeds: [embed] });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "play failed.";
+    await interaction.editReply({ content: msg });
+  }
+}
+
+async function handleRadio(interaction: ChatInputCommandInteraction) {
+  const member = requireVoiceMember(interaction);
+  if (!member?.voice.channel) {
+    return interaction.reply({ content: "join a voice channel first.", ephemeral: true });
+  }
+  await interaction.deferReply();
+  try {
+    const current = await startRadio(member);
+    const embed = new EmbedBuilder()
+      .setColor(0xff2222)
+      .setTitle("📻  pirate radio · live")
+      .setDescription(
+        current
+          ? `now: **${current.title}**${current.submitterHandle ? ` — @${current.submitterHandle}` : ""}`
+          : "no approved audio submissions found. drop something at /submit.",
+      )
+      .setFooter({ text: "shuffles forever. /stop to silence." });
+    await interaction.editReply({ embeds: [embed] });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "radio failed.";
+    await interaction.editReply({ content: msg });
+  }
+}
+
+async function handleSkip(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId) return;
+  const skipped = musicSkip(interaction.guildId);
+  if (!skipped) {
+    return interaction.reply({ content: "nothing to skip.", ephemeral: true });
+  }
+  await interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0x4a0000)
+        .setDescription(`▷▷  skipped **${skipped.title}**`),
+    ],
+  });
+}
+
+async function handleStop(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId) return;
+  const ok = musicStop(interaction.guildId);
+  if (!ok) return interaction.reply({ content: "not in a voice channel.", ephemeral: true });
+  await musicLeave(interaction.guildId);
+  await interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0x2b0000)
+        .setDescription("■  transmission terminated."),
+    ],
+  });
+}
+
+async function handleQueue(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId) return;
+  const snap = musicSnapshot(interaction.guildId);
+  if (!snap) return interaction.reply({ content: "not in a voice channel.", ephemeral: true });
+
+  const lines: string[] = [];
+  if (snap.current) {
+    lines.push(`**now** · ${snap.current.title}${snap.current.submitterHandle ? ` — @${snap.current.submitterHandle}` : ""}`);
+  }
+  snap.queue.slice(0, 15).forEach((t, i) => {
+    lines.push(`\`${String(i + 1).padStart(2, "0")}\` ${t.title} · _${t.requestedBy}_`);
+  });
+  if (snap.queue.length > 15) {
+    lines.push(`\n_… +${snap.queue.length - 15} more_`);
+  }
+  if (snap.radio) {
+    lines.push("\n📻  radio is on — queue auto-refills from approved audio.");
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(0xcc0000)
+    .setTitle("◇  queue")
+    .setDescription(lines.join("\n") || "_silence_");
+  await interaction.reply({ embeds: [embed] });
+}
+
+async function handleNowPlaying(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId) return;
+  const snap = musicSnapshot(interaction.guildId);
+  if (!snap?.current) {
+    return interaction.reply({ content: "nothing is playing.", ephemeral: true });
+  }
+  const t = snap.current;
+  const embed = new EmbedBuilder()
+    .setColor(0xff2222)
+    .setTitle("◍  now")
+    .setDescription(`**${t.title}**${t.submitterHandle ? `\n— @${t.submitterHandle}` : ""}`)
+    .setFooter({ text: `requested by @${t.requestedBy} · ${formatDuration(t.durationSec)}` });
+  await interaction.reply({ embeds: [embed] });
+}
+
+/* ── voice chat handlers ────────────────────────────────────────────── */
+
+async function handleVoice(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId) {
+    return interaction.reply({ content: "guild only.", ephemeral: true });
+  }
+  const sub = interaction.options.getSubcommand();
+  if (sub === "leave") {
+    const left = await leaveVoiceChat(interaction.guildId);
+    return interaction.reply({
+      content: left ? "◇ stepped out of voice." : "wasn't in voice.",
+      ephemeral: true,
+    });
+  }
+  const member = requireVoiceMember(interaction);
+  if (!member?.voice.channel) {
+    return interaction.reply({ content: "join a voice channel first.", ephemeral: true });
+  }
+  await interaction.deferReply({ ephemeral: true });
+  try {
+    const { channelName } = await joinVoiceChat(member);
+    await interaction.editReply(`◉ listening in **${channelName}**. talk to me.`);
+  } catch (err) {
+    await interaction.editReply(err instanceof Error ? err.message : "couldn't join voice.");
+  }
+}
+
+async function handleSay(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId) {
+    return interaction.reply({ content: "guild only.", ephemeral: true });
+  }
+  const text = interaction.options.getString("text", true);
+  await interaction.deferReply({ ephemeral: true });
+  try {
+    await say(interaction.guildId, text);
+    await interaction.editReply("◇ said.");
+  } catch (err) {
+    await interaction.editReply(err instanceof Error ? err.message : "couldn't speak.");
+  }
 }
 
 async function handleSetupVerify(interaction: ChatInputCommandInteraction) {
@@ -148,6 +352,14 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
           "**`/wheel`** — the prize wheel airs a random approved submission.",
           "**`/stats`** — site + server vital signs.",
           "**`/help`** — this.",
+        ].join("\n"),
+      },
+      {
+        name: "voice · pirate radio",
+        value: [
+          "**`/play <yt url|search>`** — queue a track in your voice channel.",
+          "**`/radio`** — auto-shuffle approved audio submissions until you stop it.",
+          "**`/np`** · **`/queue`** · **`/skip`** · **`/stop`**",
         ].join("\n"),
       },
       {

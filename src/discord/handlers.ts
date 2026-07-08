@@ -3,27 +3,29 @@ import {
   type Client,
   type GuildMember,
   EmbedBuilder,
-  type TextChannel,
-  ChannelType,
 } from "discord.js";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import {
-  showcaseEmbed,
-  submissionQueueEmbed,
-  submissionShowcaseRow,
-  featShowcaseRow,
-} from "./embeds";
+import { submissionQueueEmbed, showcaseEmbed, submissionShowcaseRow } from "./embeds";
 import { onGuildMemberAdd } from "./welcome";
 import { onMessageReactionAdd } from "./quotes";
 import { registerSlashCommands, onChatInputCommand } from "./slashCommands";
-import { logAudit } from "./audit";
 import { startScheduler } from "./scheduler";
 import { onVerifyStart, onVerifyAnswer } from "./verify";
+import { registerConverse } from "./converse";
+import { onVoiceStateUpdate, registerVoiceChat } from "./voicechat";
+import {
+  approveSubmission,
+  rejectSubmission,
+  withdrawSubmission,
+  unfeatureSubmission,
+  approveFeat,
+  rejectFeat,
+  withdrawFeat,
+  type ActionContext,
+} from "./actions";
 
-const SITE = "https://degeneratefuckface.com";
-
-const { submissions, feats, modActions, users } = schema;
+const { submissions, users } = schema;
 
 const COLOR = {
   approved: 0xff2222,
@@ -71,67 +73,18 @@ async function approve(
   modUserId: string,
   feature = false,
 ) {
-  const s = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-  });
-  if (!s) return interaction.reply({ content: "Submission missing.", ephemeral: true });
-  if (s.status === "approved")
-    return interaction.reply({ content: "Already approved.", ephemeral: true });
+  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
+  const result = await approveSubmission(ctx, submissionId, { feature });
+  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
 
-  await db.update(submissions)
-    .set({
-      status: "approved",
-      featured: feature,
-      decidedAt: new Date(),
-      decidedBy: modUserId,
-    })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId,
-    action: feature ? "feature" : "approve",
-    source: "discord",
-  });
-
-  // Mirror to #showcase WITH withdraw/unfeature controls, then thread it
-  const showcaseChannelId = process.env.DISCORD_SHOWCASE_CHANNEL_ID;
-  if (showcaseChannelId) {
-    const ch = await interaction.client.channels.fetch(showcaseChannelId);
-    if (ch && ch.type === ChannelType.GuildText) {
-      const author = await db.query.users.findFirst({ where: eq(users.id, s.userId!) });
-      const embed = showcaseEmbed(
-        { ...s, featured: feature, status: "approved" },
-        author?.handle ?? "anon",
-      );
-      const showMsg = await (ch as TextChannel).send({
-        embeds: [embed],
-        components: [submissionShowcaseRow(submissionId, feature)],
-      });
-      // auto-thread for discussion (7 day auto-archive)
-      await showMsg.startThread({
-        name: `discuss · ${s.title.slice(0, 80)}`,
-        autoArchiveDuration: 10080,
-      }).catch((err) => console.error("[thread] start failed:", err));
-    }
-  }
-
-  await logAudit(interaction.client, {
-    modUserId,
-    action: feature ? "feature" : "approve",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-    itemUrl: `${SITE}/submissions/${submissionId}`,
-  });
-
-  // Update the mod-queue message in place
-  const author = await db.query.users.findFirst({ where: eq(users.id, s.userId!) });
+  // Re-fetch to re-render the queue card in place.
+  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
+  if (!s) return;
   await interaction.update({
     embeds: [
       submissionQueueEmbed(
         { ...s, status: "approved", featured: feature },
-        author?.handle ?? "anon",
+        result.data.authorHandle,
       ).setColor(feature ? COLOR.featured : COLOR.approved),
     ],
     components: [],
@@ -144,34 +97,9 @@ async function reject(
   submissionId: string,
   modUserId: string,
 ) {
-  const s = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-  });
-  if (!s) return interaction.reply({ content: "Submission missing.", ephemeral: true });
-
-  await db.update(submissions)
-    .set({
-      status: "rejected",
-      decidedAt: new Date(),
-      decidedBy: modUserId,
-      rejectionReason: "Rejected via Discord (no reason given)",
-    })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId,
-    action: "reject",
-    source: "discord",
-  });
-
-  await logAudit(interaction.client, {
-    modUserId,
-    action: "reject",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-  });
+  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
+  const result = await rejectSubmission(ctx, submissionId);
+  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
 
   await interaction.update({
     embeds: [
@@ -190,38 +118,15 @@ async function withdraw(
   submissionId: string,
   modUserId: string,
 ) {
-  const s = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-  });
-  if (!s) return interaction.reply({ content: "Submission missing.", ephemeral: true });
-  if (s.status === "withdrawn") {
-    return interaction.reply({ content: "Already withdrawn.", ephemeral: true });
-  }
-
-  await db.update(submissions)
-    .set({ status: "withdrawn", featured: false })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId,
-    action: "withdraw",
-    source: "discord",
-  });
-
-  await logAudit(interaction.client, {
-    modUserId,
-    action: "withdraw",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-  });
+  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
+  const result = await withdrawSubmission(ctx, submissionId);
+  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
 
   await interaction.update({
     embeds: [
       new EmbedBuilder()
         .setColor(COLOR.withdrawn)
-        .setTitle(`↘ Withdrawn: ${s.title}`)
+        .setTitle(`↘ Withdrawn: ${result.data.title}`)
         .setDescription(`Pulled from public gallery by <@${interaction.user.id}>.`)
         .setFooter({ text: `id ${submissionId}` }),
     ],
@@ -234,40 +139,17 @@ async function unfeature(
   submissionId: string,
   modUserId: string,
 ) {
-  const s = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-  });
-  if (!s) return interaction.reply({ content: "Submission missing.", ephemeral: true });
-  if (!s.featured) {
-    return interaction.reply({ content: "Already unfeatured.", ephemeral: true });
-  }
+  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
+  const result = await unfeatureSubmission(ctx, submissionId);
+  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
 
-  await db.update(submissions)
-    .set({ featured: false })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId,
-    action: "unfeature",
-    source: "discord",
-  });
-
-  await logAudit(interaction.client, {
-    modUserId,
-    action: "unfeature",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-    itemUrl: `${SITE}/submissions/${submissionId}`,
-  });
-
-  // Re-render the showcase embed with the approved (not featured) palette
-  // and a row that no longer has the Unfeature button.
-  const author = await db.query.users.findFirst({ where: eq(users.id, s.userId!) });
+  // Re-fetch & re-render the showcase card with the "approved (not featured)"
+  // palette and a row that no longer has the Unfeature button.
+  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
+  if (!s) return;
   const updated = showcaseEmbed(
     { ...s, featured: false },
-    author?.handle ?? "anon",
+    result.data.authorHandle,
   ).setColor(COLOR.approved);
 
   await interaction.update({
@@ -286,68 +168,19 @@ export async function onFeatButton(interaction: ButtonInteraction) {
   const modUserId = await requireMod(interaction);
   if (!modUserId) return;
 
-  const f = await db.query.feats.findFirst({ where: eq(feats.id, featId) });
-  if (!f) return interaction.reply({ content: "Feat missing.", ephemeral: true });
+  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
 
   if (action === "approve" || action === "feature") {
-    if (f.status === "approved") {
-      return interaction.reply({ content: "Already approved.", ephemeral: true });
-    }
-    await db.update(feats)
-      .set({ status: "approved", publishedAt: new Date() })
-      .where(eq(feats.id, featId));
-    await db.insert(modActions).values({
-      featId,
-      modUserId,
-      action: action === "feature" ? "feature" : "approve",
-      source: "discord",
-    });
-
-    // Mirror to #feats showcase channel WITH a Withdraw control, then thread it
-    const featsChannelId = process.env.DISCORD_FEATS_CHANNEL_ID;
-    if (featsChannelId) {
-      const ch = await interaction.client.channels.fetch(featsChannelId);
-      if (ch && ch.type === ChannelType.GuildText) {
-        const author = await db.query.users.findFirst({ where: eq(users.id, f.userId!) });
-        const handle = author?.handle ?? "anon";
-        const embed = new EmbedBuilder()
-          .setColor(action === "feature" ? COLOR.featured : COLOR.approved)
-          .setTitle(`⬢  ${f.title}`)
-          .setURL(`https://degeneratefuckface.com/feats/${f.slug}`)
-          .setDescription((f.summary ?? "").slice(0, 1900))
-          .addFields(
-            { name: "by", value: `@${handle}`, inline: true },
-            f.repoUrl ? { name: "repo", value: f.repoUrl, inline: true } : { name: "​", value: "​", inline: true },
-            f.demoUrl ? { name: "demo", value: f.demoUrl, inline: true } : { name: "​", value: "​", inline: true },
-          );
-        if (f.heroImagePath) embed.setImage(`https://degeneratefuckface.com/uploads/${f.heroImagePath}`);
-        const featMsg = await (ch as TextChannel).send({
-          embeds: [embed],
-          components: [featShowcaseRow(f.slug, f.id)],
-        });
-        await featMsg.startThread({
-          name: `discuss · ${f.title.slice(0, 80)}`,
-          autoArchiveDuration: 10080,
-        }).catch((err) => console.error("[thread] start failed:", err));
-      }
-    }
-
-    await logAudit(interaction.client, {
-      modUserId,
-      action: action === "feature" ? "feature" : "approve",
-      kind: "feat",
-      itemId: featId,
-      itemTitle: f.title,
-      itemUrl: `${SITE}/feats/${f.slug}`,
-    });
+    const result = await approveFeat(ctx, featId, { feature: action === "feature" });
+    if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
 
     await interaction.update({
       embeds: [
         new EmbedBuilder()
           .setColor(action === "feature" ? COLOR.featured : COLOR.approved)
-          .setTitle(`✔ ${action === "feature" ? "FEATURED" : "Approved"}: ${f.title}`)
-          .setDescription(`by <@${interaction.user.id}> · /feats/${f.slug}`)
-          .setURL(`https://degeneratefuckface.com/feats/${f.slug}`),
+          .setTitle(`✔ ${action === "feature" ? "FEATURED" : "Approved"}: ${result.data.title}`)
+          .setDescription(`by <@${interaction.user.id}> · /feats/${result.data.slug}`)
+          .setURL(result.data.url),
       ],
       components: [],
     });
@@ -355,22 +188,8 @@ export async function onFeatButton(interaction: ButtonInteraction) {
   }
 
   if (action === "reject") {
-    await db.update(feats)
-      .set({ status: "rejected" })
-      .where(eq(feats.id, featId));
-    await db.insert(modActions).values({
-      featId,
-      modUserId,
-      action: "reject",
-      source: "discord",
-    });
-    await logAudit(interaction.client, {
-      modUserId,
-      action: "reject",
-      kind: "feat",
-      itemId: featId,
-      itemTitle: f.title,
-    });
+    const result = await rejectFeat(ctx, featId);
+    if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
     await interaction.update({
       embeds: [
         new EmbedBuilder()
@@ -385,32 +204,14 @@ export async function onFeatButton(interaction: ButtonInteraction) {
   }
 
   if (action === "withdraw") {
-    if (f.status === "withdrawn") {
-      return interaction.reply({ content: "Already withdrawn.", ephemeral: true });
-    }
-    await db.update(feats)
-      .set({ status: "withdrawn" })
-      .where(eq(feats.id, featId));
-    await db.insert(modActions).values({
-      featId,
-      modUserId,
-      action: "withdraw",
-      source: "discord",
-    });
-    await logAudit(interaction.client, {
-      modUserId,
-      action: "withdraw",
-      kind: "feat",
-      itemId: featId,
-      itemTitle: f.title,
-    });
-
+    const result = await withdrawFeat(ctx, featId);
+    if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
     await interaction.update({
       embeds: [
         new EmbedBuilder()
           .setColor(COLOR.withdrawn)
-          .setTitle(`↘ Withdrawn: ${f.title}`)
-          .setDescription(`Pulled by <@${interaction.user.id}>. /feats/${f.slug} no longer public.`)
+          .setTitle(`↘ Withdrawn: ${result.data.title}`)
+          .setDescription(`Pulled by <@${interaction.user.id}>. /feats/${result.data.slug} no longer public.`)
           .setFooter({ text: `feat id ${featId}` }),
       ],
       components: [],
@@ -481,6 +282,17 @@ export function registerHandlers(client: Client) {
       console.error("[bot] reaction add failed:", err);
     }
   });
+
+  client.on("voiceStateUpdate", async (oldState) => {
+    try {
+      await onVoiceStateUpdate(oldState);
+    } catch (err) {
+      console.error("[bot] voice state update failed:", err);
+    }
+  });
+
+  registerConverse(client);
+  registerVoiceChat();
 
   client.once("ready", async (c) => {
     console.log(`[bot] logged in as ${c.user.tag}`);

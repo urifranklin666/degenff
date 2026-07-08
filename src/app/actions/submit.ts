@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { db, schema } from "@/db";
 import { processUpload } from "@/lib/uploads";
 import { SubmitSchema, parseTagsInput } from "@/lib/validation";
+import { consumeRateLimit, formatRetryAfter } from "@/lib/ratelimit";
 import { notifyNewSubmission } from "@/discord/notify";
 
 const { submissions } = schema;
@@ -15,6 +16,19 @@ export async function submitWork(_prev: SubmitState, formData: FormData): Promis
   const session = await auth();
   if (!session?.user?.id) {
     return { ok: false, error: "Not signed in. Refresh and try again." };
+  }
+
+  // Rate limit: 10 submissions per user per 24h
+  const rl = await consumeRateLimit({
+    key: `submit:${session.user.id}`,
+    max: 10,
+    windowMs: 24 * 3600 * 1000,
+  });
+  if (!rl.ok) {
+    return {
+      ok: false,
+      error: `Cool it. Daily submission cap hit — try again in ${formatRetryAfter(rl.retryAfterSec)}.`,
+    };
   }
 
   // Validate scalar fields

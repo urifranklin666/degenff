@@ -87,7 +87,7 @@ export default async function CultHome() {
 
             <div style={{ marginTop: "2.25rem", display: "flex", gap: "1.25rem", flexWrap: "wrap", alignItems: "center" }}>
               <Link href="/submit" className="btn no-underline">Submit a Work</Link>
-              <Link href="/discord" className="btn ghost no-underline">Enter the Discord</Link>
+              <Link href="/dead" className="btn ghost no-underline">Degeneracy is dead †</Link>
               <PrizeStamp tone="banned" rotate="r-n8" style={{ alignSelf: "center" }}>
                 Possession Illegal In 14 Nations
               </PrizeStamp>
@@ -148,9 +148,9 @@ export default async function CultHome() {
               index="03"
               glyph="⬢"
               title="The Discord"
-              body="The community spine. Login is Discord login. Mod queue is in Discord. The site pulses with whatever just happened in there. Multimedia explosion, in real time, in role-gated rooms."
-              tags={["oauth2", "live activity", "role gated"]}
-              stamp="LIVE"
+              body="Was the community spine. Then the landlord's servers flatlined and took the rooms with them. Cause of death: dependency. The chat, the bots, and the voice are being rebuilt in-house, on our floorboards. Death notice posted at the door."
+              tags={["deceased", "rebuilding in-house", "never again"]}
+              stamp="DEAD"
               skew="deep-r"
             />
             <Tile
@@ -225,17 +225,18 @@ export default async function CultHome() {
       <section className="section" style={{ borderBottom: "none", paddingBottom: 0 }}>
         <div className="container">
           <RevealOnView>
-            <span className="eyebrow">Live</span>
+            <span className="eyebrow">Last Transmissions</span>
             <h2 className="section-title">
               <KineticType text="FROM THE DISCORD" />{" "}
-              <em>Just Now.</em>
+              <em>Posthumously.</em>
             </h2>
             <p className="lede" style={{ marginBottom: "1.5rem" }}>
-              Three weirdos arguing about a font and one person posting an unsourced
-              photograph of a dog. The dog is fine. The dog is always fine.
+              Whatever scrolls below is what the wire caught before the room went dark.
+              Three weirdos arguing about a font, one unsourced photograph of a dog.
+              The dog is fine. The dog is always fine. The room is not.
             </p>
             <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "center" }}>
-              <Link href="/discord" className="btn no-underline">Enter the Discord</Link>
+              <Link href="/dead" className="btn no-underline">Read the death notice</Link>
               <Link href="/submissions" className="btn ghost no-underline">See submissions</Link>
             </div>
           </RevealOnView>

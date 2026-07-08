@@ -152,7 +152,9 @@ IDs are nanoid (21 chars for users / mod_actions, 14 for content).
 - **Mod queue.** New submissions → bot posts an embed to `DISCORD_MOD_QUEUE_CHANNEL_ID` with buttons. Custom IDs follow `sub:<action>:<submissionId>` and `feat:<action>:<featId>`. Actions: `approve | feature | reject | withdraw | unfeature` (subs); `approve | feature | reject | withdraw` (feats).
 - **Showcase mirror.** On approve/feature, bot mirrors to `DISCORD_SHOWCASE_CHANNEL_ID` (subs) or `DISCORD_FEATS_CHANNEL_ID` (feats), with persistent Withdraw / Unfeature controls.
 - **Defense in depth on every button.** `requireMod()` re-reads the clicking user from the DB and asserts role on every interaction — does not trust prior state.
-- **Bot process.** Separate systemd unit (`degenff-bot.service`). Intents enabled: Guilds, GuildMessages, GuildMembers, MessageContent, GuildPresences.
+- **Voice (full-duplex).** The Barker can sit in a voice channel and converse like a person. `/voice join` connects (with `selfDeaf:false` — a deafened bot hears nothing) and listens; `/voice leave` / an emptied channel / 5 min idle ends it. `/say <text>` speaks a line on demand. Pipeline: `@discordjs/voice` per-speaker Opus → `prism-media` decode → `ffmpeg` to 16k mono WAV → **whisper.cpp** (`stt.ts`) → rolling transcript → `brain.think({spoken:true})` → reply or `[PASS]` → **Piper** (`tts.ts`) → audio player. Chime-in gating mirrors `converse.ts` (addressed / engaged / ambient), so voice and text share one persona. Whisper + Piper are self-hosted host binaries — install via `ops/voice-setup.sh`, configure paths in env; the layer stays dark unless `ANTHROPIC_API_KEY` + `PIPER_VOICE` + `WHISPER_MODEL` all resolve. v1 is half-duplex on turn-taking (no barge-in while it's speaking).
+- **Music vs voice are mutually exclusive** per guild, arbitrated by `voiceLock.ts` — the bot is a jukebox (`music.ts`) OR a conversationalist (`voicechat.ts`), never both on one connection.
+- **Bot process.** Separate systemd unit (`degenff-bot.service`). Intents enabled: Guilds, GuildMessages, GuildMembers, MessageContent, GuildPresences, GuildMessageReactions, GuildVoiceStates.
 
 ## Upload pipeline (`src/lib/uploads.ts`) — security-shaped
 
@@ -264,9 +266,3 @@ npm run lint          # eslint
 
 `ops/deploy.sh` does build + systemd restart for ongoing redeploys. The `cert.pem` at the repo root is the Cloudflare Tunnel origin cert (gitignored in spirit; safe to keep local).
 
-## Out of scope (Phase 1, per `PLAN.md`)
-
-- Native iOS / Android apps
-- Federation / ActivityPub
-- E2E messaging (deadplug.digital handles that)
-- Live streaming infrastructure
