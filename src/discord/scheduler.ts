@@ -3,7 +3,7 @@ import { eq, and, gte, count } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { GOOSE_LINES } from "./slashCommands";
 
-const { submissions, feats } = schema;
+const { feats } = schema;
 
 /**
  * Scheduler. Two cadences:
@@ -41,15 +41,9 @@ async function maybePostDigest(client: Client) {
 
   const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
 
-  const [{ c: newSubs }] = await db.select({ c: count() })
-    .from(submissions)
-    .where(and(eq(submissions.status, "approved"), gte(submissions.decidedAt, weekAgo)));
   const [{ c: newFeats }] = await db.select({ c: count() })
     .from(feats)
     .where(and(eq(feats.status, "approved"), gte(feats.publishedAt, weekAgo)));
-  const [{ c: newFeatured }] = await db.select({ c: count() })
-    .from(submissions)
-    .where(and(eq(submissions.featured, true), gte(submissions.decidedAt, weekAgo)));
 
   const ch = await client.channels.fetch(channelId).catch(() => null);
   if (!ch || ch.type !== ChannelType.GuildText) return;
@@ -58,8 +52,6 @@ async function maybePostDigest(client: Client) {
   const lines = [
     `WEEK OF              ${dateRange}`,
     `─────────────────────────────`,
-    `NEW SUBMISSIONS      ${newSubs}`,
-    `NEW FEATURED         ${newFeatured}`,
     `NEW FEATS            ${newFeats}`,
   ];
 

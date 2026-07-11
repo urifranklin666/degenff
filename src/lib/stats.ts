@@ -2,10 +2,10 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 export type SiteStats = {
-  submissions: number;
   feats: number;
-  featured: number;
-  contributors: number;
+  roomMessages: number;
+  awards: number;
+  residents: number;
 };
 
 /**
@@ -15,25 +15,24 @@ export type SiteStats = {
 export async function getSiteStats(): Promise<SiteStats | null> {
   try {
     const r = await db.execute<{
-      subs: string;
       feats: string;
-      featured: string;
-      contributors: string;
+      room_messages: string;
+      awards: string;
+      residents: string;
     }>(sql`
       SELECT
-        (SELECT COUNT(*) FROM submissions WHERE status = 'approved')                    AS subs,
-        (SELECT COUNT(*) FROM feats WHERE status = 'approved')                          AS feats,
-        (SELECT COUNT(*) FROM submissions WHERE status = 'approved' AND featured)       AS featured,
-        (SELECT COUNT(DISTINCT user_id) FROM submissions
-           WHERE status = 'approved' AND user_id IS NOT NULL)                           AS contributors
+        (SELECT COUNT(*) FROM feats WHERE status = 'approved')          AS feats,
+        (SELECT COUNT(*) FROM room_messages WHERE deleted_at IS NULL)   AS room_messages,
+        (SELECT COUNT(*) FROM user_awards)                              AS awards,
+        (SELECT COUNT(*) FROM users WHERE NOT banned)                   AS residents
     `);
     const row = r.rows?.[0];
     if (!row) return null;
     return {
-      submissions: Number(row.subs) || 0,
       feats: Number(row.feats) || 0,
-      featured: Number(row.featured) || 0,
-      contributors: Number(row.contributors) || 0,
+      roomMessages: Number(row.room_messages) || 0,
+      awards: Number(row.awards) || 0,
+      residents: Number(row.residents) || 0,
     };
   } catch {
     return null;

@@ -9,9 +9,9 @@ export default function AboutPage() {
 
         <div className="lede" style={{ display: "grid", gap: "1.25rem" }}>
           <p>
-            <b>What this is.</b> A small, hand-built website that holds three things at once:
-            artist submissions in any medium, long-form coding feats, and a Discord-integrated community
-            that bleeds into every page of the site.
+            <b>What this is.</b> A small, hand-built carnival that holds several things at once:
+            long-form coding feats, self-hosted rooms with a resident barker, a midway of cursed
+            prizes, a séance board, a radio tower, and a bureau that processes your paperwork slowly.
           </p>
           <p>
             <b>Who runs it.</b> The same people who run{" "}

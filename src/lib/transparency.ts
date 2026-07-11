@@ -9,7 +9,6 @@ export type WeeklyStats = {
   reject: number;
   withdraw: number;
   unfeature: number;
-  rejectionReasons: Array<{ reason: string; n: number }>;
   topContributors: Array<{ handle: string; n: number }>;
 };
 
@@ -34,23 +33,12 @@ export async function getWeeklyStats(): Promise<WeeklyStats> {
     counts[r.action] = Number(r.n) || 0;
   }
 
-  const reasons = await db.execute<{ reason: string | null; n: string }>(sql`
-    SELECT s.rejection_reason AS reason, COUNT(*)::text AS n
-    FROM submissions s
-    WHERE s.status = 'rejected'
-      AND s.decided_at >= ${start.toISOString()}
-      AND s.rejection_reason IS NOT NULL
-    GROUP BY s.rejection_reason
-    ORDER BY n DESC
-    LIMIT 8
-  `);
-
   const contributors = await db.execute<{ handle: string; n: string }>(sql`
     SELECT u.handle AS handle, COUNT(*)::text AS n
-    FROM submissions s
-    JOIN users u ON u.id = s.user_id
-    WHERE s.status = 'approved'
-      AND s.decided_at >= ${start.toISOString()}
+    FROM feats f
+    JOIN users u ON u.id = f.user_id
+    WHERE f.status = 'approved'
+      AND f.published_at >= ${start.toISOString()}
     GROUP BY u.handle
     ORDER BY n DESC
     LIMIT 8
@@ -64,10 +52,6 @@ export async function getWeeklyStats(): Promise<WeeklyStats> {
     reject:    counts.reject,
     withdraw:  counts.withdraw,
     unfeature: counts.unfeature,
-    rejectionReasons: (reasons.rows ?? []).map((r) => ({
-      reason: (r.reason ?? "").slice(0, 200),
-      n: Number(r.n) || 0,
-    })),
     topContributors: (contributors.rows ?? []).map((r) => ({
       handle: r.handle,
       n: Number(r.n) || 0,

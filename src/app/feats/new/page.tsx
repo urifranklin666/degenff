@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function NewFeatPage() {
   const session = await auth();
   if (!session?.user) {
-    redirect("/api/auth/signin?callbackUrl=%2Ffeats%2Fnew");
+    redirect("/gate?next=%2Ffeats%2Fnew");
   }
 
   return (

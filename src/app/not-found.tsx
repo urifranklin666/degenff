@@ -40,7 +40,7 @@ export default function NotFound() {
 
         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "2rem" }}>
           <Link href="/" className="btn no-underline">return to lobby</Link>
-          <Link href="/submissions" className="btn ghost no-underline">browse submissions</Link>
+          <Link href="/midway" className="btn ghost no-underline">play the midway</Link>
           <Link href="/about" className="btn ghost no-underline">read the manifesto</Link>
         </div>
       </div>

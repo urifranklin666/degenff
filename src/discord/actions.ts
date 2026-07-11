@@ -1,7 +1,7 @@
 import { type Client, type TextChannel, ChannelType, EmbedBuilder } from "discord.js";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { showcaseEmbed, submissionShowcaseRow, featShowcaseRow } from "./embeds";
+import { featShowcaseRow } from "./embeds";
 import { logAudit } from "./audit";
 
 /**
@@ -20,7 +20,7 @@ const COLOR = {
   featured: 0xff2e7c,
 };
 
-const { submissions, feats, modActions, users } = schema;
+const { feats, modActions, users } = schema;
 
 export type ActionContext = {
   client: Client;
@@ -32,14 +32,6 @@ export type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-type SubmissionInfo = {
-  id: string;
-  title: string;
-  authorHandle: string;
-  url: string;
-  featured: boolean;
-};
-
 type FeatInfo = {
   id: string;
   slug: string;
@@ -47,211 +39,6 @@ type FeatInfo = {
   url: string;
   featured: boolean;
 };
-
-/* ── submissions ─────────────────────────────────────────────────────── */
-
-export async function approveSubmission(
-  ctx: ActionContext,
-  submissionId: string,
-  opts: { feature?: boolean } = {},
-): Promise<ActionResult<SubmissionInfo>> {
-  const feature = !!opts.feature;
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
-  if (!s) return { ok: false, error: "Submission not found." };
-  if (s.status === "approved") return { ok: false, error: "Already approved." };
-
-  await db.update(submissions)
-    .set({
-      status: "approved",
-      featured: feature,
-      decidedAt: new Date(),
-      decidedBy: ctx.modUserId,
-    })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId: ctx.modUserId,
-    action: feature ? "feature" : "approve",
-    source: ctx.source,
-  });
-
-  const author = s.userId
-    ? await db.query.users.findFirst({ where: eq(users.id, s.userId) })
-    : null;
-  const authorHandle = author?.handle ?? "anon";
-
-  const showcaseChannelId = process.env.DISCORD_SHOWCASE_CHANNEL_ID;
-  if (showcaseChannelId) {
-    const ch = await ctx.client.channels.fetch(showcaseChannelId).catch(() => null);
-    if (ch && ch.type === ChannelType.GuildText) {
-      const embed = showcaseEmbed(
-        { ...s, featured: feature, status: "approved" },
-        authorHandle,
-      );
-      const showMsg = await (ch as TextChannel).send({
-        embeds: [embed],
-        components: [submissionShowcaseRow(submissionId, feature)],
-      }).catch((err) => { console.error("[showcase] send failed:", err); return null; });
-      if (showMsg) {
-        await showMsg.startThread({
-          name: `discuss · ${s.title.slice(0, 80)}`,
-          autoArchiveDuration: 10080,
-        }).catch((err) => console.error("[thread] start failed:", err));
-      }
-    }
-  }
-
-  await logAudit(ctx.client, {
-    modUserId: ctx.modUserId,
-    action: feature ? "feature" : "approve",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-    itemUrl: `${SITE}/submissions/${submissionId}`,
-  });
-
-  return {
-    ok: true,
-    data: {
-      id: submissionId,
-      title: s.title,
-      authorHandle,
-      url: `${SITE}/submissions/${submissionId}`,
-      featured: feature,
-    },
-  };
-}
-
-export async function rejectSubmission(
-  ctx: ActionContext,
-  submissionId: string,
-  reason?: string,
-): Promise<ActionResult<SubmissionInfo>> {
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
-  if (!s) return { ok: false, error: "Submission not found." };
-
-  const finalReason = (reason && reason.trim()) || `Rejected via ${ctx.source} (no reason given)`;
-
-  await db.update(submissions)
-    .set({
-      status: "rejected",
-      decidedAt: new Date(),
-      decidedBy: ctx.modUserId,
-      rejectionReason: finalReason,
-    })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId: ctx.modUserId,
-    action: "reject",
-    reason: finalReason,
-    source: ctx.source,
-  });
-
-  await logAudit(ctx.client, {
-    modUserId: ctx.modUserId,
-    action: "reject",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-  });
-
-  return {
-    ok: true,
-    data: {
-      id: submissionId,
-      title: s.title,
-      authorHandle: "—",
-      url: `${SITE}/submissions/${submissionId}`,
-      featured: false,
-    },
-  };
-}
-
-export async function withdrawSubmission(
-  ctx: ActionContext,
-  submissionId: string,
-): Promise<ActionResult<SubmissionInfo>> {
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
-  if (!s) return { ok: false, error: "Submission not found." };
-  if (s.status === "withdrawn") return { ok: false, error: "Already withdrawn." };
-
-  await db.update(submissions)
-    .set({ status: "withdrawn", featured: false })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId: ctx.modUserId,
-    action: "withdraw",
-    source: ctx.source,
-  });
-
-  await logAudit(ctx.client, {
-    modUserId: ctx.modUserId,
-    action: "withdraw",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-  });
-
-  return {
-    ok: true,
-    data: {
-      id: submissionId,
-      title: s.title,
-      authorHandle: "—",
-      url: `${SITE}/submissions/${submissionId}`,
-      featured: false,
-    },
-  };
-}
-
-export async function unfeatureSubmission(
-  ctx: ActionContext,
-  submissionId: string,
-): Promise<ActionResult<SubmissionInfo>> {
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
-  if (!s) return { ok: false, error: "Submission not found." };
-  if (!s.featured) return { ok: false, error: "Already unfeatured." };
-
-  await db.update(submissions)
-    .set({ featured: false })
-    .where(eq(submissions.id, submissionId));
-
-  await db.insert(modActions).values({
-    submissionId,
-    modUserId: ctx.modUserId,
-    action: "unfeature",
-    source: ctx.source,
-  });
-
-  await logAudit(ctx.client, {
-    modUserId: ctx.modUserId,
-    action: "unfeature",
-    kind: "submission",
-    itemId: submissionId,
-    itemTitle: s.title,
-    itemUrl: `${SITE}/submissions/${submissionId}`,
-  });
-
-  const author = s.userId
-    ? await db.query.users.findFirst({ where: eq(users.id, s.userId) })
-    : null;
-
-  return {
-    ok: true,
-    data: {
-      id: submissionId,
-      title: s.title,
-      authorHandle: author?.handle ?? "anon",
-      url: `${SITE}/submissions/${submissionId}`,
-      featured: false,
-    },
-  };
-}
 
 /* ── feats ───────────────────────────────────────────────────────────── */
 

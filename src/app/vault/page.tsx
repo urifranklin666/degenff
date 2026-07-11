@@ -65,7 +65,7 @@ export default function VaultPage() {
 
         <div style={{ marginTop: "3rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
           <Link href="/" className="btn ghost no-underline">close the vault</Link>
-          <Link href="/submissions" className="btn ghost no-underline">to the public floor</Link>
+          <Link href="/midway" className="btn ghost no-underline">to the public floor</Link>
         </div>
 
         <p style={{ fontFamily: "var(--mono)", fontSize: "0.7rem", color: "var(--text-dim-aa)", letterSpacing: "0.16em", textTransform: "uppercase", marginTop: "2.5rem", textAlign: "center" }}>

@@ -64,21 +64,13 @@ export type OrphanScan = {
 };
 
 /** Walk /var/lib/degenff/uploads and flag any file not referenced by
- *  submissions.files[].path or feats.heroImagePath. Caps the orphan list at
- *  500 so an empty DB doesn't explode the response. */
+ *  feats.heroImagePath. Caps the orphan list at 500 so an empty DB
+ *  doesn't explode the response. */
 export async function scanOrphans(): Promise<OrphanScan> {
   const t0 = Date.now();
 
   // 1. all referenced paths from DB
   const referenced = new Set<string>();
-  const subRows = await db.execute<{ files: Array<{ path: string }> }>(sql`
-    SELECT files FROM submissions WHERE jsonb_array_length(files) > 0
-  `);
-  for (const r of subRows.rows ?? []) {
-    for (const f of r.files ?? []) {
-      if (f?.path) referenced.add(f.path);
-    }
-  }
   const featRows = await db.execute<{ hero_image_path: string | null }>(sql`
     SELECT hero_image_path FROM feats WHERE hero_image_path IS NOT NULL
   `);

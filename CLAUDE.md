@@ -2,13 +2,13 @@
 
 # degeneratefuckface.com — project notes
 
-Companion to [deadplug.digital](https://deadplug.digital). Self-hosted multimedia drop-zone + coding-feats display case + Discord-integrated cult. One Dell R630, zero cloud bills.
+Companion to [deadplug.digital](https://deadplug.digital). Self-hosted haunted carnival: coding-feats display case, resident-AI chat rooms, midway games, a séance board, a radio station, and a bureau. One Dell R630, zero cloud bills.
 
 The codename across systemd / DB / package.json is **`degenff`**. The public name is **degeneratefuckface.com**.
 
 ## What this site is (in one paragraph)
 
-Three things at once on one tent: (1) **artist submissions** in any medium (image / audio / video / text / code / link / mixed), (2) **coding feats** — long-form case-study writeups, (3) a **Discord-integrated community spine** that bleeds back into every page. No algorithm: a queue, a person, a Discord channel. Sign in once with Discord; site roles are derived from Discord roles every login.
+An **attraction, not a platform** (submissions were removed 2026-07; the tables are dropped, don't resurrect them). On one tent: (1) **coding feats** — long-form case-study writeups, mod-approved; (2) **the rooms** — self-hosted chat with The Barker as resident (Postgres LISTEN/NOTIFY → SSE); (3) **the midway** (`/midway`) — daily prize wheel, scratch cards, tooth jar, paying out worthless permanent **awards** (stamps/titles on `user_awards`, shown on `/me`, `/u/*`, and next to handles in the rooms); (4) **the séance** (`/board`) — collaborative one-letter-a-minute ouija; when a sentence locks, the Barker answers through the planchette letter-by-letter over SSE; (5) **Radio Degeneracy** (`/radio`) — 24/7 MP3 stream from a standalone station process with Piper TTS idents; (6) **the bureau** (`/bureau`) — file a form, the Barker-as-clerk rules on it after a bureaucratic delay. Auth is our own: passkeys at `/gate` (open registration, rate-limited), sessions in our `sessions` table, `auth()` from `src/lib/session.ts` (re-exported at `@/auth`). The Discord OAuth app survives only as a claim bridge (`/api/bridge/discord`) so pre-passkey accounts can sign in once and mint a key; the bridge callback deliberately lives at the old Auth.js path `/api/auth/callback/discord` because that redirect URI is already registered on the Discord app. The Discord itself is dead (museum at `/dead`, bot code kept but service disabled).
 
 ## Stack
 
@@ -19,7 +19,7 @@ Three things at once on one tent: (1) **artist submissions** in any medium (imag
 | Styling | **Vanilla CSS, no Tailwind.** All in `src/app/globals.css` |
 | Language | TypeScript 5.9, React 19.2 |
 | DB | Postgres 18, `pg` driver, Drizzle ORM 0.45 |
-| Auth | Auth.js v5 (next-auth beta) with `@auth/drizzle-adapter`, Discord OAuth2 only |
+| Auth | **Our own**: passkeys (WebAuthn via `@simplewebauthn`), opaque sessions in Postgres, `/gate` for sign-in/register. Discord OAuth survives only as a one-way claim bridge for pre-passkey accounts |
 | Uploads | local FS at `/var/lib/degenff/uploads/<hash[:2]>/<hash>.<ext>`, served via a route handler |
 | Image processing | `sharp` (EXIF strip + re-encode) |
 | MIME sniff | `file-type` (magic bytes; don't trust browser) |
@@ -35,7 +35,7 @@ The repo runs **Next 16**, which is not the Next.js most training data describes
 - **`middleware` is renamed to `proxy`.** The file is `src/proxy.ts`. Use the `auth()` wrapper from Auth.js v5 and export a `config.matcher`.
 - **Server actions** size cap is set explicitly: `experimental.serverActions.bodySizeLimit: "64mb"` in `next.config.ts` (artist submissions can be heavy).
 - **`next/image`** requires explicit allow-lists in v16: `localPatterns: [{ pathname: "/uploads/**" }]` plus Discord CDN remotePatterns.
-- **Behind a Cloudflare Tunnel** the app sees plain HTTP; rely on `X-Forwarded-*`, and Auth.js needs `trustHost: true`.
+- **Behind a Cloudflare Tunnel** the app sees plain HTTP; rely on `X-Forwarded-*`. `AUTH_URL` is the public origin — it drives the WebAuthn RP ID/origin and the session cookie behavior.
 - Before adding a new Next API or convention, **read the relevant doc in `node_modules/next/dist/docs/`** to confirm shape. Heed deprecation notices.
 
 ## Folder structure
@@ -98,7 +98,9 @@ src/
 ops/
   cloudflared.config.yml     # tunnel config template (UUID placeholder)
   degenff-web.service        # systemd unit for `next start`
-  degenff-bot.service        # systemd unit for `tsx src/discord/bot.ts`
+  degenff-bot.service        # systemd unit for the Discord bot (disabled — Discord is dead)
+  degenff-barker.service     # rooms barker: chat + séance + clerk (LISTENs seance_ask, bureau_filed)
+  degenff-radio.service      # radio station process (RADIO_MUSIC_DIR is the record crate)
   deploy.sh                  # build + restart for ongoing redeploys
   env.example                # template for /etc/degenff/env (root:deadplug, 0640)
 brand/                       # SVG sources: server-icon, bot-avatar, server-banner, server-invite-splash
@@ -120,26 +122,31 @@ tsconfig.json
 
 | Route | What's there | Auth |
 |---|---|---|
-| `/` | Hero, glitch headline, prize wheel, marquees, four-dept tiles, fake testimonials, manifesto, "from the Discord just now" | Public |
-| `/submissions` | Approved gallery, filterable by medium, NSFW veil on thumb | Public |
-| `/submissions/[id]` | Single submission detail | Public (approved only to non-owners) |
-| `/submit` | Multipart upload form (artist submissions) | Signed-in (gated in `proxy.ts`) |
+| `/` | Hero, glitch headline, prize wheel, marquees, four-attraction tiles (midway/séance/rooms/radio), fake testimonials, manifesto, dead-Discord ticker | Public |
 | `/feats` | Approved coding-feat list | Public |
 | `/feats/[slug]` | Long-form writeup, renders sanitized HTML | Public for approved; owner/mods see pending |
 | `/feats/new` | Feat submission form | Signed-in (gated in route, not proxy) |
-| `/mod` | Mod queue | mod/admin only (gated in `proxy.ts`) |
-| `/discord` | Landing page with widget + invite + stats | Public |
+| `/midway` | Daily wheel spin, scratch cards (3/day), tooth jar — pays out awards; claims ledger | Public view; play requires sign-in (checked in actions) |
+| `/board` | The Séance — collaborative ouija; spirit replies stream over `/api/board/stream` SSE | Public view; letters require sign-in |
+| `/radio` | Radio Degeneracy player; proxies station via `/api/radio/stream` + `/api/radio/status` | Public |
+| `/bureau` | File a form (3/day), see your docket; the clerk rules asynchronously | Public view; filing requires sign-in |
+| `/rooms`, `/rooms/[slug]` | Self-hosted chat, SSE, presence (Barker pinned) | Signed-in (gated in `proxy.ts`) |
+| `/ops/*` | Operator panel incl. feats queue at `/ops/queue` | mod/admin only (gated in `proxy.ts`) |
+| `/dead`, `/discord` | Death notice + museum exhibit | Public |
+| `/me`, `/u/[handle]` | Your record / public dossier: feats + titles + stamps | `/me` signed-in |
 | `/about` | Manifesto | Public |
-| `/uploads/[...path]` | Streams user uploads from `/var/lib/degenff/uploads/` | Public |
+| `/uploads/[...path]` | Streams uploads (feat hero images) from `/var/lib/degenff/uploads/` | Public |
 | `/api/auth/*` | Auth.js handlers | — |
 
 ## Data model (Drizzle, `src/db/schema.ts`)
 
 - `users` — id (nanoid 21), discordId UNIQUE (nullable), handle, name, image, email, role enum (`visitor|contributor|mod|admin`, default `contributor`), banned, discordRoles jsonb, createdAt, lastSeenAt
 - `accounts` / `sessions` / `verificationTokens` — Auth.js v5 Drizzle adapter shape; **snake_case column names matter** (`refresh_token`, `access_token`, etc.) — the adapter expects them verbatim
-- `submissions` — medium enum, title/body/bodyHtml/linkUrl, files jsonb array `{path,mime,bytes,width?,height?,durationMs?}`, tags jsonb, nsfw, status enum (`pending|approved|rejected|withdrawn`), featured, submitterIp/Ua, discordMessageId/ChannelId, decidedAt/By, rejectionReason
-- `feats` — userId, **slug UNIQUE**, title, summary, bodyMd + bodyHtml, heroImagePath, repoUrl, demoUrl, tags, status, publishedAt
-- `modActions` — audit trail; FKs to either submissionId or featId; `source` is `'site' | 'discord'`
+- `feats` — userId, **slug UNIQUE**, title, summary, bodyMd + bodyHtml, heroImagePath, repoUrl, demoUrl, tags, status enum (`pending|approved|rejected|withdrawn` — still named `submission_status` in pg, don't rename), publishedAt
+- `userAwards` — stamps + titles pinned to users (midway prizes, barker grants, bureau permits); kind `stamp|title`, label, flavor, source (`midway-wheel|midway-scratch|midway-tooth|barker|seance|bureau`)
+- `bureauFilings` — formCode, body (the plea), status enum `filing_status` (`received|under_review|approved|denied|lost`), clerkNote, stampLabel, decidedAt
+- `boardSessions` — the séance; text, status `live|locked`, plus `spiritReply`/`spiritRepliedAt` written by the barker after lock
+- `modActions` — audit trail; FK to featId; `source` is `'site' | 'discord'`
 - `discordActivity` — cache of recent messages for the homepage pulse
 - `rateLimit` — generic counter table keyed by string
 
@@ -147,8 +154,7 @@ IDs are nanoid (21 chars for users / mod_actions, 14 for content).
 
 ## Discord integration
 
-- **Auth.** Discord OAuth scopes: `identify email guilds guilds.members.read`. We don't gate by guild membership — the bot syncs roles asynchronously via `syncDiscordMember` in the Auth.js `signIn` event.
-- **Role mapping.** `DISCORD_ADMIN_ROLE_ID` → `users.role='admin'`. `DISCORD_MOD_ROLE_ID` → `users.role='mod'`. Everyone else `contributor`. Lose the Discord role, lose access at next login or `guildMemberUpdate` event.
+- **Auth.** No longer Discord's problem — see the auth row in the Stack table. The claim bridge uses scope `identify` only. Roles live purely in `users.role` now; there is no Discord role sync on login (the bot's `guildMemberUpdate` handler still exists but the service is off).
 - **Mod queue.** New submissions → bot posts an embed to `DISCORD_MOD_QUEUE_CHANNEL_ID` with buttons. Custom IDs follow `sub:<action>:<submissionId>` and `feat:<action>:<featId>`. Actions: `approve | feature | reject | withdraw | unfeature` (subs); `approve | feature | reject | withdraw` (feats).
 - **Showcase mirror.** On approve/feature, bot mirrors to `DISCORD_SHOWCASE_CHANNEL_ID` (subs) or `DISCORD_FEATS_CHANNEL_ID` (feats), with persistent Withdraw / Unfeature controls.
 - **Defense in depth on every button.** `requireMod()` re-reads the clicking user from the DB and asserts role on every interaction — does not trust prior state.
@@ -256,8 +262,10 @@ Three faces on purpose, colliding.
 npm run dev           # Next dev (Turbopack)
 npm run build         # production build
 npm run start         # production server
-npm run bot           # one-shot bot process
+npm run bot           # one-shot Discord bot process (legacy — service disabled)
 npm run bot:watch     # bot with tsx watch
+npm run barker        # rooms barker (chat resident + séance spirit + bureau clerk)
+npm run radio         # radio station (24/7 stream on 127.0.0.1:$RADIO_PORT)
 npm run db:generate   # Drizzle migration from schema diff
 npm run db:migrate    # apply pending migrations
 npm run db:studio     # Drizzle Studio

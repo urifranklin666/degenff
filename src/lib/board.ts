@@ -16,7 +16,13 @@ export type BoardSnapshot = {
   status: "live" | "locked";
   startedAt: string;
   contributors: Array<{ handle: string; image: string | null; count: number }>;
-  recent: Array<{ id: string; text: string; lockedAt: string; contributors: string[] }>;
+  recent: Array<{
+    id: string;
+    text: string;
+    lockedAt: string;
+    contributors: string[];
+    spiritReply: string | null;
+  }>;
   remainingCooldownSec: number;
 };
 

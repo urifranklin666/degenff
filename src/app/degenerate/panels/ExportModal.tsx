@@ -1,6 +1,6 @@
 "use client";
 
-// DeGENERATE — export dialog: download or hand off to /submit.
+// DeGENERATE — export dialog.
 import { useEffect, useState } from "react";
 import type { ExportFormat } from "@/lib/degenerate/types";
 import { Field, Segmented, Slider } from "./Controls";
@@ -13,7 +13,6 @@ export function ExportModal({
   error,
   onClose,
   onDownload,
-  onSendToSubmit,
 }: {
   open: boolean;
   docW: number;
@@ -22,7 +21,6 @@ export function ExportModal({
   error: string | null;
   onClose: () => void;
   onDownload: (format: ExportFormat, scale: number, quality: number) => void;
-  onSendToSubmit: (format: ExportFormat, scale: number, quality: number) => void;
 }) {
   const [format, setFormat] = useState<ExportFormat>("png");
   const [scale, setScale] = useState(1);
@@ -99,19 +97,11 @@ export function ExportModal({
         <div className="dg-modal-foot">
           <button
             type="button"
-            className="dg-btn dg-btn-ghost"
+            className="dg-btn dg-btn-primary"
             disabled={busy}
             onClick={() => onDownload(format, scale, lossy ? quality : 1)}
           >
-            {busy ? "Rendering…" : "Download"}
-          </button>
-          <button
-            type="button"
-            className="dg-btn dg-btn-primary"
-            disabled={busy}
-            onClick={() => onSendToSubmit(format, scale, lossy ? quality : 1)}
-          >
-            {busy ? "Rendering…" : "Send to Submissions ↗"}
+            {busy ? "Rendering…" : "Download ↗"}
           </button>
         </div>
       </div>

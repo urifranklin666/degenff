@@ -6,7 +6,6 @@ import {
 } from "discord.js";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { submissionQueueEmbed, showcaseEmbed, submissionShowcaseRow } from "./embeds";
 import { onGuildMemberAdd } from "./welcome";
 import { onMessageReactionAdd } from "./quotes";
 import { registerSlashCommands, onChatInputCommand } from "./slashCommands";
@@ -15,17 +14,13 @@ import { onVerifyStart, onVerifyAnswer } from "./verify";
 import { registerConverse } from "./converse";
 import { onVoiceStateUpdate, registerVoiceChat } from "./voicechat";
 import {
-  approveSubmission,
-  rejectSubmission,
-  withdrawSubmission,
-  unfeatureSubmission,
   approveFeat,
   rejectFeat,
   withdrawFeat,
   type ActionContext,
 } from "./actions";
 
-const { submissions, users } = schema;
+const { users } = schema;
 
 const COLOR = {
   approved: 0xff2222,
@@ -49,114 +44,6 @@ async function requireMod(interaction: ButtonInteraction): Promise<string | null
     return null;
   }
   return mod.id;
-}
-
-/* ── submissions ─────────────────────────────────────────────────────── */
-
-export async function onSubmissionButton(interaction: ButtonInteraction) {
-  const [, action, submissionId] = interaction.customId.split(":");
-  if (!submissionId) return;
-
-  const modUserId = await requireMod(interaction);
-  if (!modUserId) return;
-
-  if (action === "approve")   return approve(interaction, submissionId, modUserId);
-  if (action === "feature")   return approve(interaction, submissionId, modUserId, true);
-  if (action === "reject")    return reject(interaction, submissionId, modUserId);
-  if (action === "withdraw")  return withdraw(interaction, submissionId, modUserId);
-  if (action === "unfeature") return unfeature(interaction, submissionId, modUserId);
-}
-
-async function approve(
-  interaction: ButtonInteraction,
-  submissionId: string,
-  modUserId: string,
-  feature = false,
-) {
-  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
-  const result = await approveSubmission(ctx, submissionId, { feature });
-  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
-
-  // Re-fetch to re-render the queue card in place.
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
-  if (!s) return;
-  await interaction.update({
-    embeds: [
-      submissionQueueEmbed(
-        { ...s, status: "approved", featured: feature },
-        result.data.authorHandle,
-      ).setColor(feature ? COLOR.featured : COLOR.approved),
-    ],
-    components: [],
-    content: `✔ ${feature ? "FEATURED" : "Approved"} by <@${interaction.user.id}>`,
-  });
-}
-
-async function reject(
-  interaction: ButtonInteraction,
-  submissionId: string,
-  modUserId: string,
-) {
-  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
-  const result = await rejectSubmission(ctx, submissionId);
-  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
-
-  await interaction.update({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(COLOR.rejected)
-        .setTitle("✘ Rejected")
-        .setDescription(`Rejected by <@${interaction.user.id}>`)
-        .setFooter({ text: `id ${submissionId}` }),
-    ],
-    components: [],
-  });
-}
-
-async function withdraw(
-  interaction: ButtonInteraction,
-  submissionId: string,
-  modUserId: string,
-) {
-  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
-  const result = await withdrawSubmission(ctx, submissionId);
-  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
-
-  await interaction.update({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(COLOR.withdrawn)
-        .setTitle(`↘ Withdrawn: ${result.data.title}`)
-        .setDescription(`Pulled from public gallery by <@${interaction.user.id}>.`)
-        .setFooter({ text: `id ${submissionId}` }),
-    ],
-    components: [],
-  });
-}
-
-async function unfeature(
-  interaction: ButtonInteraction,
-  submissionId: string,
-  modUserId: string,
-) {
-  const ctx: ActionContext = { client: interaction.client, modUserId, source: "discord" };
-  const result = await unfeatureSubmission(ctx, submissionId);
-  if (!result.ok) return interaction.reply({ content: result.error, ephemeral: true });
-
-  // Re-fetch & re-render the showcase card with the "approved (not featured)"
-  // palette and a row that no longer has the Unfeature button.
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, submissionId) });
-  if (!s) return;
-  const updated = showcaseEmbed(
-    { ...s, featured: false },
-    result.data.authorHandle,
-  ).setColor(COLOR.approved);
-
-  await interaction.update({
-    embeds: [updated],
-    components: [submissionShowcaseRow(submissionId, false)],
-    content: `↘ Unfeatured by <@${interaction.user.id}>`,
-  });
 }
 
 /* ── feats ───────────────────────────────────────────────────────────── */
@@ -246,7 +133,6 @@ export function registerHandlers(client: Client) {
       }
       if (interaction.isButton()) {
         const id = interaction.customId;
-        if (id.startsWith("sub:"))         { await onSubmissionButton(interaction); return; }
         if (id.startsWith("feat:"))        { await onFeatButton(interaction); return; }
         if (id === "verify:start")         { await onVerifyStart(interaction); return; }
         if (id.startsWith("verify:ans:"))  { await onVerifyAnswer(interaction); return; }

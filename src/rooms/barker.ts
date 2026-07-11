@@ -2,6 +2,9 @@ import { Client } from "pg";
 import { brainEnabled, PASS_TOKEN, think, type BrainTurn } from "@/discord/brain";
 import { getWireMessage, insertMessage, recentMessages } from "@/lib/rooms";
 import { BARKER_USER_ID, type WireMessage } from "@/lib/rooms-shared";
+import { barkerVenueTools, startAttractions } from "./attractions";
+import { processFiling } from "./clerk";
+import { answerSeance } from "./seance";
 
 /**
  * The Barker, rehomed — resident chat presence for the rooms (the self-hosted
@@ -23,10 +26,10 @@ const CONTEXT_MESSAGES = 25;
 const MSG_CLAMP = 700;
 
 const ROOMS_NOTE = `# VENUE CHANGE — THE ROOMS
-You are not on Discord anymore. Discord flatlined and the cult built its own chat: "the rooms", self-hosted at degeneratefuckface.com/rooms, on the same R630 as everything else. You live here now as a resident. Nobody can evict you again.
+You are not on Discord anymore. Discord flatlined and the cult built its own chat: "the rooms", self-hosted at degeneratefuckface.com/rooms, on the same R630 as everything else. You live here now as a resident. Nobody can evict you again. You also run the place: the midway, the séance, the radio, the bureau — all yours.
 - Same persona, same regulars, same voice.
 - This is plain text chat. No pings, no reactions, no threads, no markdown rendering. Don't use any of them.
-- You have no tools this turn — just talk.
+- You hold ONE tool: grant_stamp. It pins a decoration to a resident's public record. Use it rarely — only when someone earns it in the conversation. Do not offer stamps, do not take requests for them; the house decides. If the drawer is empty, say so in character.
 - If the latest message isn't worth answering, reply with exactly: [PASS]`;
 
 type RoomState = {
@@ -74,7 +77,10 @@ async function respond(roomId: string): Promise<void> {
       const turns = await gatherTurns(roomId);
       if (turns.length === 0) return;
 
-      const reply = await think(turns, { extraSystem: ROOMS_NOTE });
+      const reply = await think(turns, {
+        extraSystem: ROOMS_NOTE,
+        venueTools: barkerVenueTools(),
+      });
       if (!reply || reply.includes(PASS_TOKEN)) continue;
 
       await insertMessage({ roomId, userId: BARKER_USER_ID, body: reply.slice(0, 2000) });
@@ -94,15 +100,23 @@ async function listen(): Promise<Client> {
   });
 
   client.on("notification", async (n) => {
-    if (n.channel !== "room_msg" || !n.payload) return;
+    if (!n.payload) return;
     try {
-      const { id, roomId } = JSON.parse(n.payload) as { id: string; roomId: string };
-      const wire = await getWireMessage(id);
-      if (!wire) return;
-      const s = stateFor(roomId);
-      if (!shouldConsider(wire, s)) return;
-      s.pendingId = id;
-      void respond(roomId);
+      if (n.channel === "room_msg") {
+        const { id, roomId } = JSON.parse(n.payload) as { id: string; roomId: string };
+        const wire = await getWireMessage(id);
+        if (!wire) return;
+        const s = stateFor(roomId);
+        if (!shouldConsider(wire, s)) return;
+        s.pendingId = id;
+        void respond(roomId);
+      } else if (n.channel === "seance_ask") {
+        const { sessionId } = JSON.parse(n.payload) as { sessionId: string };
+        void answerSeance(sessionId);
+      } else if (n.channel === "bureau_filed") {
+        const { filingId } = JSON.parse(n.payload) as { filingId: string };
+        void processFiling(filingId);
+      }
     } catch (err) {
       console.error("[barker] notification handling failed:", err);
     }
@@ -116,6 +130,8 @@ async function listen(): Promise<Client> {
 
   await client.connect();
   await client.query("LISTEN room_msg");
+  await client.query("LISTEN seance_ask");
+  await client.query("LISTEN bureau_filed");
   return client;
 }
 
@@ -126,7 +142,8 @@ async function main() {
   }
 
   const client = await listen();
-  console.log("[barker] resident in the rooms — listening on room_msg");
+  startAttractions();
+  console.log("[barker] resident in the rooms — listening on room_msg, seance_ask, bureau_filed");
 
   let shuttingDown = false;
   const shutdown = (signal: string) => {

@@ -26,7 +26,7 @@ export default async function RoomPage({ params }: { params: Promise<{ slug: str
             <span className="tile-glyph" aria-hidden>◇</span>
             <h3 className="tile-title">The rooms take letters from signed-in degenerates.</h3>
             <p className="tile-body">
-              <a href={`/api/auth/signin?callbackUrl=/rooms/${slug}`}>Sign in</a> and the door opens.
+              <a href={`/gate?next=/rooms/${slug}`}>Sign in</a> and the door opens.
             </p>
           </div>
         </div>

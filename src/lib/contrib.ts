@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
-const { users, submissions, feats } = schema;
+const { users, feats } = schema;
 
 export type ContributorProfile = {
   id: string;
@@ -29,17 +29,6 @@ export async function getContributorByHandle(handle: string): Promise<Contributo
   };
 }
 
-export type ContributorSubmission = {
-  id: string;
-  title: string;
-  medium: string;
-  nsfw: boolean;
-  thumbPath: string | null;
-  featured: boolean;
-  decidedAt: string | null;
-  tags: string[];
-};
-
 export type ContributorFeat = {
   slug: string;
   title: string;
@@ -50,36 +39,15 @@ export type ContributorFeat = {
 };
 
 export async function getContributorWork(userId: string): Promise<{
-  subs: ContributorSubmission[];
   feats: ContributorFeat[];
 }> {
-  const [subRows, featRows] = await Promise.all([
-    db.query.submissions.findMany({
-      where: and(eq(submissions.userId, userId), eq(submissions.status, "approved")),
-      orderBy: [desc(submissions.decidedAt)],
-      limit: 200,
-    }),
-    db.query.feats.findMany({
-      where: and(eq(feats.userId, userId), eq(feats.status, "approved")),
-      orderBy: [desc(feats.publishedAt)],
-      limit: 200,
-    }),
-  ]);
+  const featRows = await db.query.feats.findMany({
+    where: and(eq(feats.userId, userId), eq(feats.status, "approved")),
+    orderBy: [desc(feats.publishedAt)],
+    limit: 200,
+  });
 
   return {
-    subs: subRows.map((s) => {
-      const firstImage = (s.files ?? []).find((f) => f.mime.startsWith("image/"));
-      return {
-        id: s.id,
-        title: s.title,
-        medium: s.medium,
-        nsfw: s.nsfw,
-        thumbPath: firstImage?.path ?? null,
-        featured: s.featured,
-        decidedAt: s.decidedAt?.toISOString() ?? null,
-        tags: s.tags ?? [],
-      };
-    }),
     feats: featRows.map((f) => ({
       slug: f.slug,
       title: f.title,

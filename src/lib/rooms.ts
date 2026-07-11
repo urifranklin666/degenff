@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { awardBadges } from "@/lib/awards";
 import { HISTORY_LIMIT, type RoomSummary, type WireMessage } from "@/lib/rooms-shared";
 
 const { rooms, roomMessages } = schema;
@@ -20,13 +21,16 @@ export async function getRoomBySlug(slug: string) {
   return db.query.rooms.findFirst({ where: eq(rooms.slug, slug) });
 }
 
-function toWire(row: {
-  id: string;
-  roomId: string;
-  body: string;
-  createdAt: Date;
-  author: { id: string; handle: string; name: string | null; image: string | null; role: string } | null;
-}): WireMessage {
+function toWire(
+  row: {
+    id: string;
+    roomId: string;
+    body: string;
+    createdAt: Date;
+    author: { id: string; handle: string; name: string | null; image: string | null; role: string } | null;
+  },
+  title: string | null,
+): WireMessage {
   return {
     id: row.id,
     roomId: row.roomId,
@@ -39,6 +43,7 @@ function toWire(row: {
           name: row.author.name,
           image: row.author.image,
           role: row.author.role,
+          title,
         }
       : null,
   };
@@ -52,7 +57,9 @@ export async function recentMessages(roomId: string, limit = HISTORY_LIMIT): Pro
     limit,
     with: { author: true },
   });
-  return rows.reverse().map(toWire);
+  const authorIds = [...new Set(rows.map((r) => r.author?.id).filter((x): x is string => !!x))];
+  const badges = await awardBadges(authorIds);
+  return rows.reverse().map((r) => toWire(r, r.author ? badges.get(r.author.id)?.title ?? null : null));
 }
 
 /** Fetch one message in wire shape — used by the SSE fanout on NOTIFY. */
@@ -61,7 +68,9 @@ export async function getWireMessage(id: string): Promise<WireMessage | null> {
     where: and(eq(roomMessages.id, id), isNull(roomMessages.deletedAt)),
     with: { author: true },
   });
-  return row ? toWire(row) : null;
+  if (!row) return null;
+  const badges = row.author ? await awardBadges([row.author.id]) : new Map();
+  return toWire(row, row.author ? badges.get(row.author.id)?.title ?? null : null);
 }
 
 /** Insert a message. The DB trigger NOTIFYs every listening process. */

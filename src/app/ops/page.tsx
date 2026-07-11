@@ -17,7 +17,7 @@ export default async function OpsOverview() {
     getAllServiceStatuses(),
     uploadsStats(),
     db.execute<{ c: string }>(
-      sql`SELECT COUNT(*)::text AS c FROM submissions WHERE status = 'pending'`,
+      sql`SELECT COUNT(*)::text AS c FROM feats WHERE status = 'pending'`,
     ).then((r) => Number(r.rows?.[0]?.c ?? 0)),
     db.execute<{ c: string }>(
       sql`SELECT COUNT(*)::text AS c FROM users WHERE role IN ('mod', 'admin')`,
@@ -84,7 +84,7 @@ export default async function OpsOverview() {
             {pending}
           </span>
           <ul className="ops-tile-mini">
-            <li><span className="kv-k">pending</span><span className="kv-v">submissions</span></li>
+            <li><span className="kv-k">pending</span><span className="kv-v">feats</span></li>
             <li><span className="kv-k">bulk</span><span className="kv-v">/ops/queue</span></li>
           </ul>
         </Link>

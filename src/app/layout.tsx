@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "degeneratefuckface.com",
     title: "degeneratefuckface.com — STEP RIGHT UP",
-    description: "Submit a work. Show a feat. Loiter in the Discord. Grand prize: a feeling.",
+    description: "Spin the wheel. Ask the board. File a form. Grand prize: a feeling.",
     url: "https://degeneratefuckface.com/",
   },
   twitter: {

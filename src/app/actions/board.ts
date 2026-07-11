@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db, schema } from "@/db";
@@ -81,6 +81,7 @@ async function loadSnapshot(userId?: string): Promise<BoardSnapshot> {
       text: r.text,
       lockedAt: r.lockedAt.toISOString(),
       contributors: cosigners,
+      spiritReply: r.spiritReply,
     });
   }
 
@@ -195,6 +196,15 @@ export async function submitLetter(input: LetterAction): Promise<SubmitLetterRes
   }
 
   if (shouldLock) {
+    // Summon the spirit: the barker process LISTENs on seance_ask and answers
+    // through the planchette. Best-effort — a mute spirit is still a séance.
+    try {
+      await db.execute(
+        sql`SELECT pg_notify('seance_ask', ${JSON.stringify({ sessionId: live.id })})`,
+      );
+    } catch (err) {
+      console.error("[board] seance_ask notify failed:", err);
+    }
     // Best-effort Discord post + start the next session.
     try {
       await notifyBoardLocked(live.id);

@@ -11,7 +11,6 @@ import { postVerifyMessage } from "./verify";
 import { GOOSE_LINES } from "@/lib/oracle";
 import {
   enqueue,
-  startRadio,
   skip as musicSkip,
   stop as musicStop,
   leave as musicLeave,
@@ -22,14 +21,9 @@ import { joinVoiceChat, leaveVoiceChat, say } from "./voicechat";
 
 export { GOOSE_LINES };
 
-const { submissions, feats, users, modActions } = schema;
+const { feats, users, modActions } = schema;
 
 const SITE = "https://degeneratefuckface.com";
-
-const MEDIUM_GLYPH: Record<string, string> = {
-  image: "◈", audio: "◐", video: "▶",
-  text: "✎", code: "⌬", link: "↗", mixed: "✻",
-};
 
 async function isMod(discordId: string): Promise<{ ok: boolean; userId?: string }> {
   const u = await db.query.users.findFirst({ where: eq(users.discordId, discordId) });
@@ -62,10 +56,10 @@ export const commandDefs = [
     ),
   new SlashCommandBuilder()
     .setName("case-file")
-    .setDescription("dm yourself a dossier of your submissions and feats."),
+    .setDescription("dm yourself a dossier of your feats and decorations."),
   new SlashCommandBuilder()
     .setName("wheel")
-    .setDescription("the prize wheel spins. a random approved submission gets aired."),
+    .setDescription("the prize wheel spins. a random published feat gets aired."),
   new SlashCommandBuilder()
     .setName("stats")
     .setDescription("vital signs · site and server numbers."),
@@ -88,9 +82,6 @@ export const commandDefs = [
     .addStringOption((o) =>
       o.setName("query").setDescription("YouTube URL or search").setRequired(true),
     ),
-  new SlashCommandBuilder()
-    .setName("radio")
-    .setDescription("start the pirate radio — auto-shuffles approved audio submissions."),
   new SlashCommandBuilder()
     .setName("skip")
     .setDescription("skip the current track."),
@@ -146,7 +137,6 @@ export async function onChatInputCommand(interaction: ChatInputCommandInteractio
   if (name === "audit-trail") return handleAuditTrail(interaction);
   if (name === "setup-verify") return handleSetupVerify(interaction);
   if (name === "play")        return handlePlay(interaction);
-  if (name === "radio")       return handleRadio(interaction);
   if (name === "skip")        return handleSkip(interaction);
   if (name === "stop")        return handleStop(interaction);
   if (name === "queue")       return handleQueue(interaction);
@@ -189,30 +179,6 @@ async function handlePlay(interaction: ChatInputCommandInteraction) {
   }
 }
 
-async function handleRadio(interaction: ChatInputCommandInteraction) {
-  const member = requireVoiceMember(interaction);
-  if (!member?.voice.channel) {
-    return interaction.reply({ content: "join a voice channel first.", ephemeral: true });
-  }
-  await interaction.deferReply();
-  try {
-    const current = await startRadio(member);
-    const embed = new EmbedBuilder()
-      .setColor(0xff2222)
-      .setTitle("📻  pirate radio · live")
-      .setDescription(
-        current
-          ? `now: **${current.title}**${current.submitterHandle ? ` — @${current.submitterHandle}` : ""}`
-          : "no approved audio submissions found. drop something at /submit.",
-      )
-      .setFooter({ text: "shuffles forever. /stop to silence." });
-    await interaction.editReply({ embeds: [embed] });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "radio failed.";
-    await interaction.editReply({ content: msg });
-  }
-}
-
 async function handleSkip(interaction: ChatInputCommandInteraction) {
   if (!interaction.guildId) return;
   const skipped = musicSkip(interaction.guildId);
@@ -249,16 +215,13 @@ async function handleQueue(interaction: ChatInputCommandInteraction) {
 
   const lines: string[] = [];
   if (snap.current) {
-    lines.push(`**now** · ${snap.current.title}${snap.current.submitterHandle ? ` — @${snap.current.submitterHandle}` : ""}`);
+    lines.push(`**now** · ${snap.current.title}`);
   }
   snap.queue.slice(0, 15).forEach((t, i) => {
     lines.push(`\`${String(i + 1).padStart(2, "0")}\` ${t.title} · _${t.requestedBy}_`);
   });
   if (snap.queue.length > 15) {
     lines.push(`\n_… +${snap.queue.length - 15} more_`);
-  }
-  if (snap.radio) {
-    lines.push("\n📻  radio is on — queue auto-refills from approved audio.");
   }
 
   const embed = new EmbedBuilder()
@@ -278,7 +241,7 @@ async function handleNowPlaying(interaction: ChatInputCommandInteraction) {
   const embed = new EmbedBuilder()
     .setColor(0xff2222)
     .setTitle("◍  now")
-    .setDescription(`**${t.title}**${t.submitterHandle ? `\n— @${t.submitterHandle}` : ""}`)
+    .setDescription(`**${t.title}**`)
     .setFooter({ text: `requested by @${t.requestedBy} · ${formatDuration(t.durationSec)}` });
   await interaction.reply({ embeds: [embed] });
 }
@@ -348,8 +311,8 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
           "**`/goose`** — the goose has something to say.",
           "**`/redact <text>`** — classifies a thing. publicly.",
           "**`/receipt [@user]`** — issues an evidence receipt for the named subject.",
-          "**`/case-file`** — DMs you a dossier of your own submissions + feats.",
-          "**`/wheel`** — the prize wheel airs a random approved submission.",
+          "**`/case-file`** — DMs you a dossier of your own feats + decorations.",
+          "**`/wheel`** — the prize wheel airs a random published feat.",
           "**`/stats`** — site + server vital signs.",
           "**`/help`** — this.",
         ].join("\n"),
@@ -358,7 +321,6 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
         name: "voice · pirate radio",
         value: [
           "**`/play <yt url|search>`** — queue a track in your voice channel.",
-          "**`/radio`** — auto-shuffle approved audio submissions until you stop it.",
           "**`/np`** · **`/queue`** · **`/skip`** · **`/stop`**",
         ].join("\n"),
       },
@@ -384,14 +346,14 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
       {
         name: "the mod queue",
         value:
-          "submissions and feats from the site land in the mod queue with approve / feature / reject buttons. " +
+          "feats from the site land in the mod queue with approve / feature / reject buttons. " +
           "mod role required; the bot re-checks on every click.",
       },
       {
         name: "the showcase mirrors + auto-threads",
         value:
-          "anything approved lands in #showcase (submissions) or #feats (writeups) automatically, " +
-          "with persistent withdraw / unfeature controls and a discussion thread already open on the post.",
+          "approved feats land in #feats automatically, " +
+          "with persistent withdraw controls and a discussion thread already open on the post.",
       },
     )
     .setFooter({ text: "// no attorney present · shoes off" });
@@ -471,14 +433,10 @@ async function handleCaseFile(interaction: ChatInputCommandInteraction) {
   });
   if (!u) {
     await interaction.editReply(
-      "you don't have a case file yet — sign in once at degeneratefuckface.com first (top-right Submit button kicks off OAuth).",
+      "you don't have a case file yet — sign in once at degeneratefuckface.com first .",
     );
     return;
   }
-  const mySubs = await db.select().from(submissions)
-    .where(eq(submissions.userId, u.id))
-    .orderBy(desc(submissions.createdAt))
-    .limit(10);
   const myFeats = await db.select().from(feats)
     .where(eq(feats.userId, u.id))
     .orderBy(desc(feats.createdAt))
@@ -489,7 +447,6 @@ async function handleCaseFile(interaction: ChatInputCommandInteraction) {
     `SITE ID     ${u.id}`,
     `ROLE        ${u.role}${u.banned ? " // banned" : ""}`,
     `ENROLLED    ${new Date(u.createdAt).toISOString().slice(0, 10)}`,
-    `SUBMITTED   ${mySubs.length}`,
     `FEATS       ${myFeats.length}`,
   ];
 
@@ -500,14 +457,6 @@ async function handleCaseFile(interaction: ChatInputCommandInteraction) {
     .setFooter({ text: "// for your eyes only · do not distribute" })
     .setTimestamp();
 
-  if (mySubs.length > 0) {
-    embed.addFields({
-      name: "submissions",
-      value: mySubs.map((s) =>
-        `• [${s.status.toUpperCase()}]${s.featured ? " ★" : ""} ${s.title.slice(0, 60)} · ${s.medium}`,
-      ).join("\n").slice(0, 1024),
-    });
-  }
   if (myFeats.length > 0) {
     embed.addFields({
       name: "feats",
@@ -526,39 +475,36 @@ async function handleCaseFile(interaction: ChatInputCommandInteraction) {
   }
 }
 
-/* ── /wheel — random approved submission ─────────────────────────────── */
+/* ── /wheel — random published feat ──────────────────────────────────── */
 
 async function handleWheel(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const [picked] = await db.select().from(submissions)
-    .where(eq(submissions.status, "approved"))
+  const [picked] = await db.select().from(feats)
+    .where(eq(feats.status, "approved"))
     .orderBy(sql`random()`)
     .limit(1);
 
   if (!picked) {
-    await interaction.editReply("the wheel turned. nothing was on it. submit a work first.");
+    await interaction.editReply("the wheel turned. nothing was on it. write a feat first.");
     return;
   }
 
   const author = picked.userId
     ? await db.query.users.findFirst({ where: eq(users.id, picked.userId) })
     : null;
-  const glyph = MEDIUM_GLYPH[picked.medium] ?? "◇";
 
   const embed = new EmbedBuilder()
-    .setColor(picked.featured ? 0xff2e7c : 0xff2222)
-    .setTitle(`◆ the prize wheel landed on · ${glyph}  ${picked.title}`)
-    .setURL(`${SITE}/submissions/${picked.id}`)
-    .setDescription((picked.body ?? "_no body_").slice(0, 1500))
+    .setColor(0xff2222)
+    .setTitle(`◆ the prize wheel landed on · ⬢  ${picked.title}`)
+    .setURL(`${SITE}/feats/${picked.slug}`)
+    .setDescription((picked.summary ?? "_no summary_").slice(0, 1500))
     .addFields(
-      { name: "by",     value: `@${author?.handle ?? "anon"}`, inline: true },
-      { name: "medium", value: picked.medium,                  inline: true },
-      { name: "filed",  value: new Date(picked.createdAt).toISOString().slice(0, 10), inline: true },
+      { name: "by",    value: `@${author?.handle ?? "anon"}`, inline: true },
+      { name: "filed", value: new Date(picked.createdAt).toISOString().slice(0, 10), inline: true },
     )
     .setFooter({ text: "// found on a body" });
 
-  const firstImage = (picked.files ?? []).find((f) => f.mime.startsWith("image/"));
-  if (firstImage) embed.setImage(`${SITE}/uploads/${firstImage.path}`);
+  if (picked.heroImagePath) embed.setImage(`${SITE}/uploads/${picked.heroImagePath}`);
 
   await interaction.editReply({ embeds: [embed] });
 }
@@ -567,20 +513,16 @@ async function handleWheel(interaction: ChatInputCommandInteraction) {
 
 async function handleStats(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const [{ c: subCount }]   = await db.select({ c: count() }).from(submissions).where(eq(submissions.status, "approved"));
   const [{ c: featCount }]  = await db.select({ c: count() }).from(feats).where(eq(feats.status, "approved"));
-  const [{ c: pendingCount }] = await db.select({ c: count() }).from(submissions).where(eq(submissions.status, "pending"));
-  const [{ c: featuredCount }] = await db.select({ c: count() }).from(submissions).where(eq(submissions.featured, true));
+  const [{ c: pendingCount }] = await db.select({ c: count() }).from(feats).where(eq(feats.status, "pending"));
   const [{ c: usersCount }] = await db.select({ c: count() }).from(users);
 
   const guild = interaction.guild;
   const members = guild?.memberCount ?? "?";
 
   const lines: string[] = [
-    `SUBMISSIONS LIVE          ${subCount}`,
-    `SUBMISSIONS FEATURED      ${featuredCount}`,
-    `SUBMISSIONS PENDING       ${pendingCount}`,
     `FEATS CATALOGUED          ${featCount}`,
+    `FEATS PENDING             ${pendingCount}`,
     `ENROLLED SUBJECTS         ${usersCount}`,
     `DISCORD MEMBERS           ${members}`,
     `R630s                     1`,
@@ -661,15 +603,12 @@ async function handleAuditTrail(interaction: ChatInputCommandInteraction) {
     return interaction.editReply(`@${target.username} has no site account.`);
   }
 
-  const targetSubs = await db.select({ id: submissions.id, title: submissions.title })
-    .from(submissions).where(eq(submissions.userId, targetLocal.id));
   const targetFeats = await db.select({ id: feats.id, title: feats.title })
     .from(feats).where(eq(feats.userId, targetLocal.id));
-  const subTitleById = new Map(targetSubs.map((s) => [s.id, s.title]));
   const featTitleById = new Map(targetFeats.map((f) => [f.id, f.title]));
 
-  if (subTitleById.size === 0 && featTitleById.size === 0) {
-    return interaction.editReply(`@${target.username} has no submissions or feats on file.`);
+  if (featTitleById.size === 0) {
+    return interaction.editReply(`@${target.username} has no feats on file.`);
   }
 
   // pull recent mod actions, filter to ones touching this user's content
@@ -677,8 +616,7 @@ async function handleAuditTrail(interaction: ChatInputCommandInteraction) {
     .orderBy(desc(modActions.createdAt))
     .limit(200);
   const relevant = recent.filter((a) =>
-    (a.submissionId && subTitleById.has(a.submissionId)) ||
-    (a.featId && featTitleById.has(a.featId))
+    a.featId && featTitleById.has(a.featId)
   ).slice(0, 12);
 
   if (relevant.length === 0) {
@@ -701,9 +639,7 @@ async function handleAuditTrail(interaction: ChatInputCommandInteraction) {
   const lines = relevant.map((a) => {
     const when = new Date(a.createdAt).toISOString().slice(5, 16).replace("T", " ");
     const mh = modHandle.get(a.modUserId ?? "") ?? "?";
-    const what = a.submissionId
-      ? `sub · ${subTitleById.get(a.submissionId)?.slice(0, 50) ?? "?"}`
-      : `feat · ${featTitleById.get(a.featId!)?.slice(0, 50) ?? "?"}`;
+    const what = `feat · ${featTitleById.get(a.featId!)?.slice(0, 50) ?? "?"}`;
     return `${when}  ${a.action.padEnd(9)}  @${mh.padEnd(14)}  ${what}`;
   });
 
@@ -711,7 +647,7 @@ async function handleAuditTrail(interaction: ChatInputCommandInteraction) {
     .setColor(0xff2222)
     .setTitle(`◆ audit trail · @${target.username}`)
     .setDescription("```\n" + lines.join("\n") + "\n```")
-    .setFooter({ text: `subs: ${subTitleById.size} · feats: ${featTitleById.size} · last 12 actions` });
+    .setFooter({ text: `feats: ${featTitleById.size} · last 12 actions` });
 
   await interaction.editReply({ embeds: [embed] });
 }

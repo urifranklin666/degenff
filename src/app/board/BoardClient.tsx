@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { submitLetter } from "@/app/actions/board";
 import { MAX_CHARS, type BoardSnapshot, type LetterAction } from "@/lib/board";
 
+type SpiritEvent = { sessionId: string; seq: number; char: string; done: boolean };
+type SpiritState = { sessionId: string; text: string; channeling: boolean } | null;
+
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const POLL_MS = 2500;
 
@@ -29,7 +32,29 @@ export function BoardClient({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [cooldown, setCooldown] = useState<number>(initial.remainingCooldownSec);
+  const [spirit, setSpirit] = useState<SpiritState>(null);
   const tickRef = useRef<number | null>(null);
+
+  // Watch the séance wire: the barker paces the spirit's reply out one
+  // letter at a time; every open board sees the planchette move together.
+  useEffect(() => {
+    const es = new EventSource("/api/board/stream");
+    es.addEventListener("spirit", (e) => {
+      const ev = JSON.parse((e as MessageEvent).data) as SpiritEvent;
+      setSpirit((prev) => {
+        if (ev.done) {
+          return prev && prev.sessionId === ev.sessionId
+            ? { ...prev, channeling: false }
+            : prev;
+        }
+        if (!prev || prev.sessionId !== ev.sessionId) {
+          return { sessionId: ev.sessionId, text: ev.char, channeling: true };
+        }
+        return { ...prev, text: prev.text + ev.char, channeling: true };
+      });
+    });
+    return () => es.close();
+  }, []);
 
   // Poll the snapshot periodically so other users' letters appear.
   useEffect(() => {
@@ -121,6 +146,22 @@ export function BoardClient({
         </div>
       </div>
 
+      {spirit && (
+        <div className={`board-spirit${spirit.channeling ? " is-channeling" : ""}`} aria-live="polite">
+          <span className="board-spirit-label">
+            {spirit.channeling ? "the other side is answering" : "the other side said"}
+          </span>
+          <div className="board-sentence-row">
+            {spirit.text.split("").map((ch, i) => (
+              <span key={i} className={`board-tile is-spirit${ch === " " ? " is-space" : ""}`}>
+                {ch === " " ? "·" : ch}
+              </span>
+            ))}
+            {spirit.channeling && <span className="board-tile is-spirit board-tile-blink" aria-hidden>▓</span>}
+          </div>
+        </div>
+      )}
+
       <div className="board-status">
         {canType ? (
           cooldown > 0 ? (
@@ -193,6 +234,9 @@ export function BoardClient({
             {snap.recent.map((r) => (
               <li key={r.id} className="board-recent-item">
                 <blockquote>{r.text}</blockquote>
+                {r.spiritReply && (
+                  <blockquote className="board-recent-reply">↳ {r.spiritReply}</blockquote>
+                )}
                 <p className="board-recent-meta">
                   <span>{timeAgo(r.lockedAt)}</span>
                   <span className="board-counter-sep">·</span>

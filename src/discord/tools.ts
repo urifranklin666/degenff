@@ -7,10 +7,6 @@ import {
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import {
-  approveSubmission,
-  rejectSubmission,
-  withdrawSubmission,
-  unfeatureSubmission,
   approveFeat,
   rejectFeat,
   withdrawFeat,
@@ -22,7 +18,7 @@ import {
  *   1. Read-only catalog — site + user lookups. Available to everyone.
  *   2. Discord write — post/react in channels the bot can already access.
  *      Available to everyone (Discord channel perms are the real bound).
- *   3. Mod actions — approve/reject/feature/withdraw. Gated by:
+ *   3. Mod actions — approve/reject/feature/withdraw feats. Gated by:
  *      - env kill switch BARKER_MOD_HOOKS=on
  *      - actor must have role mod|admin in our users table
  *      - per-Discord-user rate limit (5 actions / 10 min)
@@ -31,7 +27,7 @@ import {
  * entirely from non-mods so non-mods can't even ask.
  */
 
-const { submissions, feats, users } = schema;
+const { feats, users } = schema;
 
 const SITE = "https://degeneratefuckface.com";
 const MOD_ACTIONS_PER_WINDOW = 5;
@@ -75,40 +71,14 @@ const READ_TOOLS: Anthropic.Tool[] = [
   {
     name: "search_site",
     description:
-      "Full-text-ish search across approved submissions and feats by title or body. Use when a user asks about something on the site.",
+      "Full-text-ish search across published feats by title or body. Use when a user asks about something on the site.",
     input_schema: {
       type: "object",
       properties: {
         query: { type: "string", description: "What to search for. Min 2 chars." },
-        kind: { type: "string", enum: ["submission", "feat", "any"], description: "Restrict by content type. Default any." },
         limit: { type: "number", description: "Max results. Default 5, max 10." },
       },
       required: ["query"],
-    },
-  },
-  {
-    name: "recent_submissions",
-    description: "List the most recently approved submissions, optionally filtered by medium.",
-    input_schema: {
-      type: "object",
-      properties: {
-        medium: { type: "string", enum: ["image", "audio", "video", "text", "code", "link", "mixed"] },
-        limit: { type: "number", description: "Max results. Default 5, max 10." },
-      },
-    },
-  },
-  {
-    name: "featured_now",
-    description: "List submissions currently flagged 'featured'.",
-    input_schema: { type: "object", properties: {} },
-  },
-  {
-    name: "lookup_submission",
-    description: "Fetch one submission by its 14-char id.",
-    input_schema: {
-      type: "object",
-      properties: { id: { type: "string" } },
-      required: ["id"],
     },
   },
   {
@@ -123,7 +93,7 @@ const READ_TOOLS: Anthropic.Tool[] = [
   {
     name: "whois",
     description:
-      "Look up a community member by their display-name or handle. Returns site role, join date, and submission count. Use when context references a person and you want grounding.",
+      "Look up a community member by their display-name or handle. Returns site role, join date, and published-feat count. Use when context references a person and you want grounding.",
     input_schema: {
       type: "object",
       properties: { name: { type: "string" } },
@@ -162,48 +132,6 @@ const DISCORD_WRITE_TOOLS: Anthropic.Tool[] = [
 ];
 
 const MOD_TOOLS: Anthropic.Tool[] = [
-  {
-    name: "approve_submission",
-    description: "Approve a pending submission. If feature=true, also feature it. Only callable by mod/admin.",
-    input_schema: {
-      type: "object",
-      properties: {
-        id: { type: "string" },
-        feature: { type: "boolean" },
-      },
-      required: ["id"],
-    },
-  },
-  {
-    name: "reject_submission",
-    description: "Reject a pending submission with an optional reason. Mod/admin only.",
-    input_schema: {
-      type: "object",
-      properties: {
-        id: { type: "string" },
-        reason: { type: "string" },
-      },
-      required: ["id"],
-    },
-  },
-  {
-    name: "withdraw_submission",
-    description: "Withdraw an approved submission from the public gallery. Mod/admin only.",
-    input_schema: {
-      type: "object",
-      properties: { id: { type: "string" } },
-      required: ["id"],
-    },
-  },
-  {
-    name: "unfeature_submission",
-    description: "Remove the featured flag from a submission while leaving it approved. Mod/admin only.",
-    input_schema: {
-      type: "object",
-      properties: { id: { type: "string" } },
-      required: ["id"],
-    },
-  },
   {
     name: "approve_feat",
     description: "Approve a pending feat by slug or id. feature=true also features it. Mod/admin only.",
@@ -274,12 +202,6 @@ export async function executeTool(
     switch (name) {
       case "search_site":
         return await toolSearchSite(input);
-      case "recent_submissions":
-        return await toolRecentSubmissions(input);
-      case "featured_now":
-        return await toolFeaturedNow();
-      case "lookup_submission":
-        return await toolLookupSubmission(input);
       case "lookup_feat":
         return await toolLookupFeat(input);
       case "whois":
@@ -288,10 +210,6 @@ export async function executeTool(
         return await toolPostToChannel(input, actor);
       case "react_to_message":
         return await toolReactToMessage(input, actor);
-      case "approve_submission":
-      case "reject_submission":
-      case "withdraw_submission":
-      case "unfeature_submission":
       case "approve_feat":
       case "reject_feat":
       case "withdraw_feat":
@@ -312,39 +230,12 @@ async function toolSearchSite(input: ToolInput): Promise<string> {
   if (!query || query.length < 2) {
     return JSON.stringify({ error: "query must be at least 2 chars" });
   }
-  const kind = asString(input.kind) ?? "any";
   const limit = asNumber(input.limit, 5, 10);
   const needle = `%${query}%`;
 
   const results: Array<Record<string, unknown>> = [];
 
-  if (kind === "any" || kind === "submission") {
-    const rows = await db.select({
-      id: submissions.id,
-      title: submissions.title,
-      medium: submissions.medium,
-      featured: submissions.featured,
-      createdAt: submissions.createdAt,
-    })
-      .from(submissions)
-      .where(and(
-        eq(submissions.status, "approved"),
-        or(ilike(submissions.title, needle), ilike(submissions.body, needle)),
-      ))
-      .orderBy(desc(submissions.createdAt))
-      .limit(limit);
-    for (const r of rows) {
-      results.push({
-        kind: "submission",
-        id: r.id,
-        title: r.title,
-        medium: r.medium,
-        featured: r.featured,
-        url: `${SITE}/submissions/${r.id}`,
-      });
-    }
-  }
-  if (kind === "any" || kind === "feat") {
+  {
     const rows = await db.select({
       id: feats.id,
       slug: feats.slug,
@@ -371,71 +262,6 @@ async function toolSearchSite(input: ToolInput): Promise<string> {
     }
   }
   return JSON.stringify({ results: results.slice(0, limit) });
-}
-
-async function toolRecentSubmissions(input: ToolInput): Promise<string> {
-  const medium = asString(input.medium);
-  const limit = asNumber(input.limit, 5, 10);
-  const cond = medium
-    ? and(eq(submissions.status, "approved"), eq(submissions.medium, medium as typeof submissions.medium.enumValues[number]))
-    : eq(submissions.status, "approved");
-  const rows = await db.select({
-    id: submissions.id,
-    title: submissions.title,
-    medium: submissions.medium,
-    featured: submissions.featured,
-    createdAt: submissions.createdAt,
-    userId: submissions.userId,
-  })
-    .from(submissions)
-    .where(cond)
-    .orderBy(desc(submissions.createdAt))
-    .limit(limit);
-  return JSON.stringify({
-    results: rows.map((r) => ({
-      id: r.id,
-      title: r.title,
-      medium: r.medium,
-      featured: r.featured,
-      url: `${SITE}/submissions/${r.id}`,
-    })),
-  });
-}
-
-async function toolFeaturedNow(): Promise<string> {
-  const subs = await db.select({
-    id: submissions.id,
-    title: submissions.title,
-    medium: submissions.medium,
-  })
-    .from(submissions)
-    .where(and(eq(submissions.status, "approved"), eq(submissions.featured, true)))
-    .orderBy(desc(submissions.createdAt))
-    .limit(10);
-  return JSON.stringify({
-    submissions: subs.map((s) => ({ ...s, url: `${SITE}/submissions/${s.id}` })),
-  });
-}
-
-async function toolLookupSubmission(input: ToolInput): Promise<string> {
-  const id = asString(input.id);
-  if (!id) return JSON.stringify({ error: "id required" });
-  const s = await db.query.submissions.findFirst({ where: eq(submissions.id, id) });
-  if (!s || s.status !== "approved") return JSON.stringify({ error: "not found" });
-  const author = s.userId
-    ? await db.query.users.findFirst({ where: eq(users.id, s.userId) })
-    : null;
-  return JSON.stringify({
-    id: s.id,
-    title: s.title,
-    medium: s.medium,
-    body: (s.body ?? "").slice(0, 400),
-    tags: s.tags,
-    nsfw: s.nsfw,
-    featured: s.featured,
-    author: author?.handle ?? "anon",
-    url: `${SITE}/submissions/${s.id}`,
-  });
 }
 
 async function toolLookupFeat(input: ToolInput): Promise<string> {
@@ -481,14 +307,14 @@ async function toolWhois(input: ToolInput): Promise<string> {
       const [{ count }] = await db.select({
         count: sql<number>`count(*)::int`,
       })
-        .from(submissions)
-        .where(and(eq(submissions.userId, u.id), eq(submissions.status, "approved")));
+        .from(feats)
+        .where(and(eq(feats.userId, u.id), eq(feats.status, "approved")));
       return {
         handle: u.handle,
         displayName: u.name,
         role: u.role,
         joined: u.createdAt,
-        approvedSubmissions: count,
+        publishedFeats: count,
       };
     }),
   );
@@ -552,31 +378,9 @@ async function toolModAction(
     source: "barker",
   };
 
-  // submissions take a 14-char nanoid; feats take slug or id.
-  const id = asString(input.id) ?? "";
   const key = asString(input.slug_or_id) ?? "";
 
   switch (name) {
-    case "approve_submission": {
-      if (!id) return JSON.stringify({ error: "id required" });
-      const r = await approveSubmission(ctx, id, { feature: asBool(input.feature) });
-      return r.ok ? JSON.stringify({ ok: true, ...r.data }) : JSON.stringify({ error: r.error });
-    }
-    case "reject_submission": {
-      if (!id) return JSON.stringify({ error: "id required" });
-      const r = await rejectSubmission(ctx, id, asString(input.reason) ?? undefined);
-      return r.ok ? JSON.stringify({ ok: true, ...r.data }) : JSON.stringify({ error: r.error });
-    }
-    case "withdraw_submission": {
-      if (!id) return JSON.stringify({ error: "id required" });
-      const r = await withdrawSubmission(ctx, id);
-      return r.ok ? JSON.stringify({ ok: true, ...r.data }) : JSON.stringify({ error: r.error });
-    }
-    case "unfeature_submission": {
-      if (!id) return JSON.stringify({ error: "id required" });
-      const r = await unfeatureSubmission(ctx, id);
-      return r.ok ? JSON.stringify({ ok: true, ...r.data }) : JSON.stringify({ error: r.error });
-    }
     case "approve_feat": {
       if (!key) return JSON.stringify({ error: "slug_or_id required" });
       const featId = await resolveFeatId(key);

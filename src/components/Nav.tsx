@@ -17,10 +17,11 @@ export default async function Nav() {
           </span>
         </Link>
         <div className="nav-links" role="menubar">
-          <Link href="/submissions" role="menuitem">Submissions</Link>
           <Link href="/feats" role="menuitem">Feats</Link>
-          <Link href="/board" role="menuitem">Board</Link>
           <Link href="/rooms" role="menuitem">Rooms</Link>
+          <Link href="/board" role="menuitem">Séance</Link>
+          <Link href="/radio" role="menuitem">Radio</Link>
+          <Link href="/bureau" role="menuitem">Bureau</Link>
           <Link href="/dead" role="menuitem">Discord&nbsp;†</Link>
           <Link href="/about" role="menuitem">About</Link>
           {session?.user && (
@@ -33,7 +34,7 @@ export default async function Nav() {
               <span aria-hidden>◆</span> Ops
             </Link>
           )}
-          <Link href="/submit" role="menuitem" className="btn no-underline">Submit</Link>
+          <Link href="/midway" role="menuitem" className="btn no-underline">Midway</Link>
         </div>
       </div>
     </nav>

@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import { Client } from "pg";
 import { getWireMessage, type WireMessage } from "@/lib/rooms";
+import { BARKER_HANDLE, BARKER_USER_ID } from "@/lib/rooms-shared";
 
 /**
  * Realtime spine for the rooms. One dedicated pg connection per process
@@ -42,11 +43,15 @@ async function connect(live: Live): Promise<void> {
   });
 
   client.on("notification", async (n) => {
-    if (n.channel !== "room_msg" || !n.payload) return;
+    if (!n.payload) return;
     try {
-      const { id, roomId } = JSON.parse(n.payload) as { id: string; roomId: string };
-      const wire = await getWireMessage(id);
-      if (wire) live.emitter.emit(`msg:${roomId}`, wire);
+      if (n.channel === "room_msg") {
+        const { id, roomId } = JSON.parse(n.payload) as { id: string; roomId: string };
+        const wire = await getWireMessage(id);
+        if (wire) live.emitter.emit(`msg:${roomId}`, wire);
+      } else if (n.channel === "seance_char") {
+        live.emitter.emit("seance", JSON.parse(n.payload) as SeanceEvent);
+      }
     } catch {
       // malformed payload or fetch race — drop it, history catches up on reload
     }
@@ -57,6 +62,7 @@ async function connect(live: Live): Promise<void> {
 
   await client.connect();
   await client.query("LISTEN room_msg");
+  await client.query("LISTEN seance_char");
   live.client = client;
 }
 
@@ -91,16 +97,35 @@ export function onRoomMessage(roomId: string, fn: (m: WireMessage) => void): () 
   return () => live.emitter.off(`msg:${roomId}`, fn);
 }
 
+/** One planchette movement from the other side, broadcast by the barker
+ * process over pg_notify('seance_char'). */
+export type SeanceEvent = {
+  sessionId: string;
+  seq: number;
+  char: string; // one char, or "" on the done frame
+  done: boolean;
+};
+
+export function onSeance(fn: (e: SeanceEvent) => void): () => void {
+  const live = getLive();
+  live.emitter.on("seance", fn);
+  return () => live.emitter.off("seance", fn);
+}
+
 export function onPresence(roomId: string, fn: (list: PresenceEntry[]) => void): () => void {
   const live = getLive();
   live.emitter.on(`presence:${roomId}`, fn);
   return () => live.emitter.off(`presence:${roomId}`, fn);
 }
 
+/* The Barker holds no SSE connection — it LISTENs on Postgres from its own
+ * process — so the resident is pinned into every snapshot rather than tracked. */
+const RESIDENT: PresenceEntry = { userId: BARKER_USER_ID, handle: BARKER_HANDLE, image: null };
+
 export function presenceSnapshot(roomId: string): PresenceEntry[] {
   const room = getLive().presence.get(roomId);
-  if (!room) return [];
-  return [...room.values()].map(({ userId, handle, image }) => ({ userId, handle, image }));
+  const here = room ? [...room.values()].map(({ userId, handle, image }) => ({ userId, handle, image })) : [];
+  return [RESIDENT, ...here];
 }
 
 function broadcastPresence(roomId: string) {

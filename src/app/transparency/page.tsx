@@ -23,8 +23,8 @@ export default async function TransparencyPage() {
           The <em>Desk.</em>
         </h1>
         <p className="lede" style={{ marginBottom: "2rem", color: "var(--text)" }}>
-          What the moderators did this week, redacted to counts. Names of rejected
-          submissions are not published. Reasons are — that&apos;s the whole point.
+          What the moderators did this week, redacted to counts. The desk keeps
+          receipts on itself — that&apos;s the whole point.
         </p>
 
         <div className="transparency-card">
@@ -39,24 +39,6 @@ export default async function TransparencyPage() {
             <div className="transparency-stat total"><span className="v">{totalActions}</span><span className="l">total actions</span></div>
           </div>
         </div>
-
-        {s.rejectionReasons.length > 0 && (
-          <div className="transparency-card">
-            <h2 className="transparency-h">{"// why things got rejected"}</h2>
-            <ul className="transparency-list">
-              {s.rejectionReasons.map((r) => (
-                <li key={r.reason}>
-                  <span className="transparency-n">{r.n}×</span>
-                  <span className="transparency-reason">&ldquo;{r.reason}&rdquo;</span>
-                </li>
-              ))}
-            </ul>
-            <p className="transparency-note">
-              Common ones: <em>unedited LLM output</em>, <em>boring</em>, <em>dupe of #xxx</em>.
-              We don&apos;t mince. We do explain.
-            </p>
-          </div>
-        )}
 
         {s.topContributors.length > 0 && (
           <div className="transparency-card">

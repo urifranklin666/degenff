@@ -4,13 +4,11 @@
 // owns the Pixi scene graph. Mutators update state, call the engine, then commit
 // a history snapshot (coalesced by label so slider drags collapse to one entry).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 import { DegenerateEngine } from "@/lib/degenerate/engine";
 import { EFFECTS } from "@/lib/degenerate/filters";
 import { NEUTRAL_GRADE } from "@/lib/degenerate/types";
 import type { DocState, EffectInstance, ExportFormat, GradeState, TextLayer } from "@/lib/degenerate/types";
-import { stashImage } from "@/lib/degenerate/handoff";
 import { fontFamily } from "./fonts";
 import { createEffectInstance, createTextLayer } from "./state";
 import { CommandBar } from "./panels/CommandBar";
@@ -22,7 +20,6 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 const COALESCE_MS = 700;
 
 export default function Editor() {
-  const router = useRouter();
   const stageRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -377,7 +374,7 @@ export default function Editor() {
 
   // ─── export ───────────────────────────────────────────────────────────────
   const runExport = useCallback(
-    async (format: ExportFormat, scale: number, quality: number, send: boolean) => {
+    async (format: ExportFormat, scale: number, quality: number) => {
       const engine = engineRef.current;
       if (!engine) return;
       setExportBusy(true);
@@ -385,28 +382,23 @@ export default function Editor() {
       try {
         const blob = await engine.exportBlob(format, scale, quality);
         const ext = format === "jpeg" ? "jpg" : format;
-        if (send) {
-          await stashImage({ blob, filename: `degenerate.${ext}`, mime: `image/${format}` });
-          router.push("/submit?from=degenerate");
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `degenerate-${Date.now()}.${ext}`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-          setExportOpen(false);
-          setStatus("Exported.");
-        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `degenerate-${Date.now()}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setExportOpen(false);
+        setStatus("Exported.");
       } catch (e) {
         setExportError(e instanceof Error ? e.message : "Export failed.");
       } finally {
         setExportBusy(false);
       }
     },
-    [router],
+    [],
   );
 
   // ─── keyboard ─────────────────────────────────────────────────────────────
@@ -546,8 +538,7 @@ export default function Editor() {
         busy={exportBusy}
         error={exportError}
         onClose={() => setExportOpen(false)}
-        onDownload={(f, s, q) => runExport(f, s, q, false)}
-        onSendToSubmit={(f, s, q) => runExport(f, s, q, true)}
+        onDownload={(f, s, q) => runExport(f, s, q)}
       />
     </div>
   );

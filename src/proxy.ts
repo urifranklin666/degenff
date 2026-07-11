@@ -1,37 +1,32 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { getSessionByToken, SESSION_COOKIE } from "@/lib/session";
 
 /**
- * Next.js 16 renames middleware → proxy. Guards /mod.
- * - Unsigned-in visitors are sent to the signin flow with a callback to /mod.
- * - Signed-in visitors without mod/admin are bounced to /?forbidden=1
- *   (NOT back to signin — that would loop, because Auth.js will redirect
- *   already-signed-in users to the callbackUrl, which puts us right back here).
+ * Next.js 16 renames middleware → proxy; it runs on the Node runtime, so the
+ * session lookup hits Postgres directly. Guards:
+ * - /ops: mod/admin only. Signed-out → /gate; wrong role → /?forbidden=1
+ *   (NOT back to the gate — a signed-in user would just loop).
+ * - /rooms: any signed-in user.
  */
-export default auth((req) => {
+export default async function proxy(req: NextRequest) {
   const url = req.nextUrl;
+  const needsOps = url.pathname.startsWith("/ops");
+  const needsUser = url.pathname.startsWith("/rooms");
+  if (!needsOps && !needsUser) return NextResponse.next();
 
-  if (url.pathname.startsWith("/mod") || url.pathname.startsWith("/ops")) {
-    if (!req.auth) {
-      const signIn = new URL("/api/auth/signin", url);
-      signIn.searchParams.set("callbackUrl", url.pathname + url.search);
-      return NextResponse.redirect(signIn);
-    }
-    const role = req.auth.user?.role;
-    if (role !== "mod" && role !== "admin") {
-      return NextResponse.redirect(new URL("/?forbidden=1", url));
-    }
+  const token = req.cookies.get(SESSION_COOKIE)?.value ?? "";
+  const session = token ? await getSessionByToken(token) : null;
+
+  if (!session) {
+    const gate = new URL("/gate", url);
+    gate.searchParams.set("next", url.pathname + url.search);
+    return NextResponse.redirect(gate);
   }
-
-  // /submit + /rooms: any signed-in user; unsigned visitors → signin
-  if ((url.pathname === "/submit" || url.pathname.startsWith("/rooms")) && !req.auth) {
-    const signIn = new URL("/api/auth/signin", url);
-    signIn.searchParams.set("callbackUrl", url.pathname);
-    return NextResponse.redirect(signIn);
+  if (needsOps && session.user.role !== "mod" && session.user.role !== "admin") {
+    return NextResponse.redirect(new URL("/?forbidden=1", url));
   }
-
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

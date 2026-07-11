@@ -14,13 +14,16 @@
     "bot": "tsx src/discord/bot.ts",
     "bot:watch": "tsx watch src/discord/bot.ts",
     "barker": "tsx src/rooms/barker.ts",
-    "barker:watch": "tsx watch src/rooms/barker.ts"
+    "barker:watch": "tsx watch src/rooms/barker.ts",
+    "radio": "tsx src/radio/station.ts",
+    "radio:watch": "tsx watch src/radio/station.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
-    "@auth/drizzle-adapter": "^1.11.2",
     "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.2",
+    "@simplewebauthn/browser": "^9.0.1",
+    "@simplewebauthn/server": "^9.0.3",
     "discord.js": "^14.26.4",
     "drizzle-orm": "^0.45.2",
     "file-type": "^22.0.1",
@@ -28,7 +31,6 @@
     "marked": "^18.0.3",
     "nanoid": "^5.1.11",
     "next": "16.2.6",
-    "next-auth": "^5.0.0-beta.31",
     "pg": "^8.20.0",
     "pixi-filters": "^6.1.5",
     "pixi.js": "^8.18.1",

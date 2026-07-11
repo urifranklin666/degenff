@@ -1,0 +1,30 @@
+[Unit]
+Description=degenff radio station (24/7 stream for /radio)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deadplug
+Group=deadplug
+WorkingDirectory=/home/deadplug/Degeneracy
+EnvironmentFile=/etc/degenff/env
+ExecStart=/usr/bin/node /home/deadplug/Degeneracy/node_modules/.bin/tsx /home/deadplug/Degeneracy/src/radio/station.ts
+Restart=always
+RestartSec=5
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/degenff
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

@@ -6,6 +6,7 @@ export const HISTORY_LIMIT = 100;
 
 /** The Barker's resident account, seeded in migration 0005. */
 export const BARKER_USER_ID = "the-barker-resident-1";
+export const BARKER_HANDLE = "the-barker";
 
 /** A message shaped for the wire: what the client renders and the SSE stream carries. */
 export type WireMessage = {
@@ -19,6 +20,8 @@ export type WireMessage = {
     name: string | null;
     image: string | null;
     role: string;
+    /** Latest 'title' award, worn like a name tag. */
+    title: string | null;
   } | null;
 };
 

@@ -16,8 +16,8 @@ const TOP_MARQUEE = [
   "ROOM IS OCCUPIED",
   "DO NOT ENTER",
   "THE DOOR LOCKED BEHIND YOU",
-  "SUBMISSIONS OPEN",
-  "FEATS OPEN",
+  "THE MIDWAY IS OPEN",
+  "THE SPIRIT IS IN",
   "WE WERE EXPECTING YOU",
   "NOTHING HERE FOR YOU",
   "EVERYTHING HERE FOR YOU",
@@ -70,15 +70,16 @@ export default async function CultHome() {
             </div>
 
             <p className="lede" style={{ marginTop: "1.8rem", maxWidth: "60ch" }}>
-              A multimedia drop-zone, a coding-feats display case, and a Discord-integrated
-              cult of weirdos. Hand-built on one Dell R630 in someone&apos;s house. Moderated
-              by humans who barely sleep. Consent implied by your continued scrolling.
+              A haunted carnival with a resident barker: chat rooms, a séance board, a midway
+              of cursed prizes, a radio tower, and a bureau that files you. Hand-built on one
+              Dell R630 in someone&apos;s house. Consent implied by your continued scrolling.
             </p>
 
             <div className="hero-meta">
-              <span><b>{stats ? padCount(stats.submissions) : "00+"}</b> submissions live</span>
+              <span><b>{stats ? padCount(stats.roomMessages) : "00+"}</b> things said in the rooms</span>
               <span><b>{stats ? padCount(stats.feats) : "00"}</b> feats catalogued</span>
-              <span><b>{stats ? padCount(stats.contributors) : "00"}</b> weirdos on record</span>
+              <span><b>{stats ? padCount(stats.awards) : "00"}</b> worthless prizes claimed</span>
+              <span><b>{stats ? padCount(stats.residents) : "00"}</b> weirdos on record</span>
               <span><b>∞</b> appetite for the weird</span>
               <span><b>$0</b> in SaaS bills</span>
               <span><b>1</b> Dell R630</span>
@@ -86,7 +87,7 @@ export default async function CultHome() {
             </div>
 
             <div style={{ marginTop: "2.25rem", display: "flex", gap: "1.25rem", flexWrap: "wrap", alignItems: "center" }}>
-              <Link href="/submit" className="btn no-underline">Submit a Work</Link>
+              <Link href="/midway" className="btn no-underline">Play the Midway</Link>
               <Link href="/dead" className="btn ghost no-underline">Degeneracy is dead †</Link>
               <PrizeStamp tone="banned" rotate="r-n8" style={{ alignSelf: "center" }}>
                 Possession Illegal In 14 Nations
@@ -119,9 +120,9 @@ export default async function CultHome() {
               Four Rooms. <em>One Tent.</em><br />Every Room Cursed.
             </h2>
             <p className="lede" style={{ marginBottom: "2.5rem", color: "var(--text)" }}>
-              You don&apos;t need credentials. You don&apos;t need a CV. You need a thing you made
-              and the willingness to put it in a queue. A human will see it before the rest of the room does.
-              The humans are tired. They will be honest about that.
+              You don&apos;t need credentials. You don&apos;t need a CV. You need to sign the register
+              and walk the floor. Something that lives here will notice you. It is friendly,
+              in the way a carnival is friendly. It will be honest about that.
             </p>
           </RevealOnView>
 
@@ -129,37 +130,37 @@ export default async function CultHome() {
             <Tile
               index="01"
               glyph="◈"
-              title="Submissions"
-              body="Image, audio, video, text, code, link, or some unholy mixture. Drop it in the form. A human (and a Discord bot in a trench coat) sees it before it goes public. The bar is &lsquo;did you make it,&rsquo; not &lsquo;is it good.&rsquo;"
-              tags={["any medium", "moderated", "no follower counts"]}
+              title="The Midway"
+              body="The prize wheel spins once a day per soul. Scratch cards scratch. The tooth jar pays out in teeth. Every prize is worthless, permanent, and stamped onto your public record. Play compulsively."
+              tags={["daily spin", "cursed prizes", "stamps on file"]}
               stamp="OPEN"
               skew="deep-l"
             />
             <Tile
               index="02"
-              glyph="⬡"
-              title="Coding Feats"
-              body="Long-form case studies for the projects you almost can&apos;t believe you finished. Repo, demo, screenshots, post-mortem. The format that lets you brag in detail without anyone calling it cringe."
-              tags={["case studies", "post-mortems", "weird hardware OK"]}
-              stamp="LISTED"
+              glyph="◍"
+              title="The Séance"
+              body="A ouija board with something actually on the other end. The room spells a question one letter per minute, one hand each. When the sentence locks, the planchette moves on its own. Watch it answer live."
+              tags={["one letter per minute", "collective typing", "it answers"]}
+              stamp="LIVE"
               skew="r"
             />
             <Tile
               index="03"
               glyph="⬢"
-              title="The Discord"
-              body="Was the community spine. Then the landlord's servers flatlined and took the rooms with them. Cause of death: dependency. The chat, the bots, and the voice are being rebuilt in-house, on our floorboards. Death notice posted at the door."
-              tags={["deceased", "rebuilding in-house", "never again"]}
-              stamp="DEAD"
+              title="The Rooms"
+              body="The Discord died — dependency, tragic, notice at the door. So the tent grew its own chat on our own Postgres. The Barker lives in the walls now. Nobody can evict it again."
+              tags={["self-hosted chat", "resident barker", "never again"]}
+              stamp="OURS"
               skew="deep-r"
             />
             <Tile
               index="04"
               glyph="◉"
-              title="Infrastructure"
-              body="One Dell R630. One Cloudflare Tunnel. Zero cloud bills. Postgres on local disk, Discord bot on systemd, every line of CSS hand-written. Outsourcing is for cowards and shareholders."
-              tags={["self-hosted", "ground-up", "no saas"]}
-              stamp="OURS"
+              title="Radio Degeneracy"
+              body="A transmitter bolted to the R630. Music around the clock, station idents by a voice that has never had a body, occasional readings from the rooms. Leave it on in a tab. It likes that."
+              tags={["24/7 stream", "dj: the barker", "zero cloud bills"]}
+              stamp="ON AIR"
               skew="l"
             />
           </div>
@@ -191,9 +192,9 @@ export default async function CultHome() {
             <div className="lede" style={{ display: "grid", gap: "1.25rem", color: "var(--text)" }}>
               <p>
                 The internet sorted itself into a feed and called it a culture. We disagree.
-                degeneratefuckface.com is a small, deliberate counter-current: submissions live or die on
-                whether they&apos;re interesting, not whether they&apos;re engaging. There is no algorithm.
-                There is a queue, a person, and a Discord channel that smells like menthol and ozone.
+                degeneratefuckface.com is a small, deliberate counter-current: an attraction, not a
+                platform. There is no algorithm. There is a wheel, a board, a bureau, and a barker
+                in a tent that smells like menthol and ozone.
               </p>
               <p>
                 We are operator-cult industrial. We like terminal aesthetics, oxblood reds, monospace
@@ -202,8 +203,8 @@ export default async function CultHome() {
                 congratulations, you&apos;re in the right room.
               </p>
               <p>
-                Banned at the door: bigotry, doxxing, illegal content, generative slop you didn&apos;t edit,
-                CSAM, and anything that wastes a moderator&apos;s time. Past that line: weirder is better.
+                Banned at the door: bigotry, doxxing, illegal content, and anything that wastes the
+                clerk&apos;s time. Past that line: weirder is better.
               </p>
               <p>
                 The official position of management on the events of{" "}
@@ -237,7 +238,7 @@ export default async function CultHome() {
             </p>
             <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "center" }}>
               <Link href="/dead" className="btn no-underline">Read the death notice</Link>
-              <Link href="/submissions" className="btn ghost no-underline">See submissions</Link>
+              <Link href="/rooms" className="btn ghost no-underline">Enter the rooms</Link>
             </div>
           </RevealOnView>
         </div>

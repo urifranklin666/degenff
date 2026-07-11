@@ -106,6 +106,7 @@ export default function RoomsClient({
                   </span>
                   {isBarker && <span className="rooms-msg-role is-barker">resident</span>}
                   {!isBarker && isMod && <span className="rooms-msg-role">{author?.role}</span>}
+                  {!isBarker && author?.title && <span className="rooms-msg-role is-title">{author.title}</span>}
                   <span className="rooms-msg-time" suppressHydrationWarning>{fmtTime(m.createdAt)}</span>
                 </div>
               )}
@@ -121,7 +122,11 @@ export default function RoomsClient({
         </span>
         <span className="rooms-presence-count">{presence.length} in the room</span>
         <span className="rooms-presence-list">
-          {presence.map((p) => `@${p.handle}`).join("  ")}
+          {presence.map((p, i) => (
+            <span key={p.userId} className={p.userId === BARKER_USER_ID ? "is-barker" : undefined}>
+              {i > 0 && " "}@{p.handle}
+            </span>
+          ))}
         </span>
       </div>
 

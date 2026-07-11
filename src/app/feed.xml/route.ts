@@ -2,34 +2,34 @@ import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { renderAtom, type FeedEntry } from "@/lib/feeds";
 
-const { submissions } = schema;
+const { feats } = schema;
 const SITE = process.env.AUTH_URL?.replace(/\/$/, "") ?? "https://degeneratefuckface.com";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export async function GET() {
-  const rows = await db.query.submissions.findMany({
-    where: eq(submissions.status, "approved"),
+  const rows = await db.query.feats.findMany({
+    where: eq(feats.status, "approved"),
     with: { author: { columns: { handle: true } } },
-    orderBy: [desc(submissions.decidedAt)],
+    orderBy: [desc(feats.publishedAt)],
     limit: 50,
   });
 
-  const entries: FeedEntry[] = rows.map((s) => ({
-    id: `${SITE}/submissions/${s.id}`,
-    title: s.title,
-    url: `${SITE}/submissions/${s.id}`,
-    updated: (s.decidedAt ?? s.createdAt).toISOString(),
-    summary: (s.body ?? "").slice(0, 400),
-    author: s.author?.handle ? `@${s.author.handle}` : undefined,
+  const entries: FeedEntry[] = rows.map((f) => ({
+    id: `${SITE}/feats/${f.slug}`,
+    title: f.title,
+    url: `${SITE}/feats/${f.slug}`,
+    updated: (f.publishedAt ?? f.createdAt).toISOString(),
+    summary: (f.summary ?? "").slice(0, 400),
+    author: f.author?.handle ? `@${f.author.handle}` : undefined,
   }));
 
   const xml = renderAtom({
-    title: "degeneratefuckface.com — submissions",
-    subtitle: "approved submissions, freshest first",
+    title: "degeneratefuckface.com — feats",
+    subtitle: "published feats, freshest first",
     feedUrl: `${SITE}/feed.xml`,
-    siteUrl: `${SITE}/submissions`,
+    siteUrl: `${SITE}/feats`,
     updated: entries[0]?.updated ?? new Date().toISOString(),
     entries,
   });

@@ -1,15 +1,12 @@
 /**
- * Music — per-guild voice queue. Plays:
- *   - YouTube via yt-dlp (binary on the host). play-dl was unreliable
- *     because YouTube changes break the JS extractor periodically; yt-dlp
- *     is actively maintained and patches within days.
- *   - Local audio submissions from /var/lib/degenff/uploads/ where
- *     submissions.medium='audio' and submissions.status='approved'.
+ * Music — per-guild voice queue. Plays YouTube via yt-dlp (binary on the
+ * host). play-dl was unreliable because YouTube changes break the JS
+ * extractor periodically; yt-dlp is actively maintained and patches within
+ * days.
  *
  * Lifecycle:
  *   - enqueue() joins the user's voice channel if not connected.
- *   - The player drains the queue; on Idle, plays the next track or
- *     (in radio mode) refills from the site's approved audio pool.
+ *   - The player drains the queue; on Idle, plays the next track.
  *   - 5 min idle with empty queue → leave voice.
  */
 
@@ -26,29 +23,17 @@ import {
   type AudioPlayer,
 } from "@discordjs/voice";
 import type { GuildMember, VoiceBasedChannel } from "discord.js";
-import { eq, and, sql } from "drizzle-orm";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { createReadStream } from "node:fs";
-import { access, constants } from "node:fs/promises";
-import { join } from "node:path";
-import { db, schema } from "@/db";
 import { busyReason, claim, release } from "./voiceLock";
 
-const { submissions, users } = schema;
-
-const UPLOAD_ROOT = "/var/lib/degenff/uploads";
 const IDLE_LEAVE_MS = 5 * 60 * 1000;
 
 export type Track = {
-  kind: "youtube" | "submission";
+  kind: "youtube";
   title: string;
-  url: string;             // YouTube URL or `submission:<id>`
+  url: string;
   durationSec?: number;
   requestedBy: string;     // Discord user tag
-  // For "submission" tracks
-  submissionId?: string;
-  submitterHandle?: string;
-  filePath?: string;       // absolute path
 };
 
 type GuildState = {
@@ -58,7 +43,6 @@ type GuildState = {
   player: AudioPlayer;
   queue: Track[];
   current: Track | null;
-  radio: boolean;
   leaveTimer: NodeJS.Timeout | null;
   ytdlpProc: ChildProcessWithoutNullStreams | null;
 };
@@ -186,7 +170,6 @@ async function ensureConnection(member: GuildMember): Promise<GuildState> {
     player,
     queue: [],
     current: null,
-    radio: false,
     leaveTimer: null,
     ytdlpProc: null,
   };
@@ -225,64 +208,20 @@ async function ensureConnection(member: GuildMember): Promise<GuildState> {
 }
 
 function buildResource(state: GuildState, track: Track) {
-  if (track.kind === "youtube") {
-    const proc = ytdlpStream(track.url);
-    proc.stderr.on("data", (d) => {
-      // yt-dlp likes to print progress here even with --quiet; ignore unless
-      // it errors out. Only log the first ~200 chars so we don't spam.
-      const s = d.toString();
-      if (/error/i.test(s)) console.error("[music] yt-dlp:", s.trim().slice(0, 200));
-    });
-    proc.on("error", (err) => console.error("[music] yt-dlp spawn error:", err));
-    state.ytdlpProc = proc;
-    return createAudioResource(proc.stdout, { inputType: StreamType.Arbitrary, inlineVolume: false });
-  }
-  if (!track.filePath) throw new Error("Submission track has no file path.");
-  const stream = createReadStream(track.filePath);
-  return createAudioResource(stream, { inputType: StreamType.Arbitrary, inlineVolume: false });
-}
-
-async function pickRandomSubmission(): Promise<Track | null> {
-  const rows = await db
-    .select({
-      id: submissions.id,
-      title: submissions.title,
-      files: submissions.files,
-      handle: users.handle,
-    })
-    .from(submissions)
-    .leftJoin(users, eq(submissions.userId, users.id))
-    .where(and(eq(submissions.status, "approved"), eq(submissions.medium, "audio")))
-    .orderBy(sql`random()`)
-    .limit(20);
-
-  for (const row of rows) {
-    const audioFile = (row.files ?? []).find((f) => f.mime.startsWith("audio/"));
-    if (!audioFile) continue;
-    const abs = join(UPLOAD_ROOT, audioFile.path);
-    try {
-      await access(abs, constants.R_OK);
-    } catch {
-      continue;
-    }
-    return {
-      kind: "submission",
-      title: row.title,
-      url: `submission:${row.id}`,
-      requestedBy: "radio",
-      submissionId: row.id,
-      submitterHandle: row.handle ?? "anon",
-      filePath: abs,
-    };
-  }
-  return null;
+  const proc = ytdlpStream(track.url);
+  proc.stderr.on("data", (d) => {
+    // yt-dlp likes to print progress here even with --quiet; ignore unless
+    // it errors out. Only log the first ~200 chars so we don't spam.
+    const s = d.toString();
+    if (/error/i.test(s)) console.error("[music] yt-dlp:", s.trim().slice(0, 200));
+  });
+  proc.on("error", (err) => console.error("[music] yt-dlp spawn error:", err));
+  state.ytdlpProc = proc;
+  return createAudioResource(proc.stdout, { inputType: StreamType.Arbitrary, inlineVolume: false });
 }
 
 async function advance(state: GuildState): Promise<void> {
-  let next = state.queue.shift() ?? null;
-  if (!next && state.radio) {
-    next = await pickRandomSubmission();
-  }
+  const next = state.queue.shift() ?? null;
   if (!next) {
     scheduleLeave(state);
     return;
@@ -329,15 +268,6 @@ export async function enqueue(
   return { track, position };
 }
 
-export async function startRadio(member: GuildMember): Promise<Track | null> {
-  const state = await ensureConnection(member);
-  state.radio = true;
-  if (!state.current && state.queue.length === 0) {
-    await advance(state);
-  }
-  return state.current;
-}
-
 export function skip(guildId: string): Track | null {
   const state = guilds.get(guildId);
   if (!state) return null;
@@ -350,7 +280,6 @@ export function stop(guildId: string): boolean {
   const state = guilds.get(guildId);
   if (!state) return false;
   state.queue = [];
-  state.radio = false;
   state.current = null;
   killYtdlp(state);
   state.player.stop(true);
@@ -364,7 +293,6 @@ export async function leave(guildId: string): Promise<boolean> {
     clearLeaveTimer(state);
     killYtdlp(state);
     state.queue = [];
-    state.radio = false;
     state.current = null;
     state.player.stop(true);
   }
@@ -387,7 +315,6 @@ export function snapshot(guildId: string) {
     channelId: s.channelId,
     current: s.current,
     queue: [...s.queue],
-    radio: s.radio,
   };
 }
 
